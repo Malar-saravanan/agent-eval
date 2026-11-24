@@ -55,10 +55,10 @@ const LEGEND: Record<string, string> = {
   timeout: 'trial hit its time limit',
   grader_error: 'the grader itself failed',
   budget_exhausted: 'step or token budget ran out',
-  hallucinated_tool_args: 'a tool call was rejected for bad arguments',
+  hallucinated_tool_args: 'a tool call was rejected for bad arguments (flags, schema, unknown tool)',
   capability_disabled: 'task needs skills/memory but this config has them switched off (expected failure)',
   capability_unused: 'skills/memory were available but the agent never used them',
-  gave_up_early: 'at most one tool call, or asked for help / said it could not',
+  gave_up_early: 'no tool use at all, or said it could not proceed after at most 3 steps',
   judge_borderline: 'judge gave a partial score (0.25-0.75)',
   wrong_answer: 'completed normally, grader said no',
 }
