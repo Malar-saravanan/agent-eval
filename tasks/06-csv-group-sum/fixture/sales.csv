@@ -1,0 +1,8 @@
+region,product,amount
+east,widget,100
+west,widget,40
+east,gadget,50
+north,widget,7
+west,gadget,60
+north,gadget,3
+east,widget,25

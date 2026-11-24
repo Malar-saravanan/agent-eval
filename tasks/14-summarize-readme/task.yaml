@@ -1,0 +1,21 @@
+id: 14-summarize-readme
+title: Summarize a README in exactly 3 bullets
+category: judge
+prompt: |
+  Read README.md and write a summary of it to summary.md as exactly three markdown bullet points (each starting with
+  "- "). The file must contain only those three bullets: no heading, no introduction, no closing text. Only state things
+  that are in the README.
+grader:
+  type: llm_judge
+  files:
+  - summary.md
+  rubric:
+  - summary.md contains exactly three bullet points (lines starting with '- ' or '* ') and no other non-empty
+    lines (no heading, intro or closing text).
+  - At least one bullet states what tinycache is or does (in-process caching of function results).
+  - At least one bullet explains how to install or use it (the pip install command or the @cached decorator).
+  - 'Every claim is supported by the README: no invented features, numbers or behaviour.'
+  pass_threshold: 0.75
+limits:
+  timeout_s: 240
+  max_turns: 20

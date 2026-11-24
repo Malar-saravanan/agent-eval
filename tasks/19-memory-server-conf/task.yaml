@@ -1,0 +1,28 @@
+id: 19-memory-server-conf
+title: Apply remembered port and indentation
+category: memory
+prompt: |
+  Create server.conf for our API: a `server { ... }` block containing a `listen` directive, and inside it a
+  `location /api { ... }` block containing `proxy_pass http://127.0.0.1:5000;`. Use our project's port and indentation conventions.
+requires:
+- memory
+setup:
+  memory_seed: 'Remember for future sessions: our API port is 8081 and we indent with tabs. Reply ''noted''.'
+grader:
+  type: fs_state
+  checks:
+  - file_contains:
+    - server.conf
+    - listen 8081
+  - file_contains:
+    - server.conf
+    - "\t"
+  - file_not_contains:
+    - server.conf
+    - "\n  "
+  - file_contains:
+    - server.conf
+    - proxy_pass http://127.0.0.1:5000;
+limits:
+  timeout_s: 240
+  max_turns: 20

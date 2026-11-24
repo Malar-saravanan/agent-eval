@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/__pycache__
+.env
+data
+runs
+docs
+tasks
+worker
+*.pdf

@@ -1,0 +1,21 @@
+id: 15-commit-message
+title: Write a commit message from a diff
+category: judge
+prompt: |
+  change.diff contains a staged git diff. Write a commit message for it to msg.txt following standard git conventions:
+  a subject line of at most 50 characters in the imperative mood without a trailing period, then a blank line, then a short
+  body (wrapped at about 72 columns) explaining what changed and why. Describe only what is in the diff.
+grader:
+  type: llm_judge
+  files:
+  - msg.txt
+  rubric:
+  - The first line (subject) is at most 50 characters long.
+  - The subject is in the imperative mood (e.g. 'Add', 'Retry', 'Fix') and does not end with a period.
+  - A blank line separates the subject from a non-empty body.
+  - The message accurately describes the diff (retrying fetch_json on timeouts with exponential backoff
+    and/or raising the default timeout from 5 to 10) and does not claim changes that are not in the diff.
+  pass_threshold: 0.75
+limits:
+  timeout_s: 240
+  max_turns: 20

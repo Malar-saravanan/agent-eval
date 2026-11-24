@@ -1,0 +1,16 @@
+id: 13-sqlite-query
+title: Answer a question with a SQL query
+category: exact
+prompt: |
+  shop.db is a SQLite database with tables customers(id, name, country), orders(id, customer_id, status) and
+  order_items(order_id, product, quantity, unit_price). Question: what is the total revenue (sum of quantity * unit_price
+  over order items) of orders whose status is 'shipped' and whose customer's country is 'DE'?
+  Write a single SQL query that returns that one number to a file named query.sql, run it against shop.db (Python's
+  sqlite3 module is available), and write the resulting integer value into a file named answer.txt.
+grader:
+  type: exact_match
+  source: file:answer.txt
+  expected: '2223'
+limits:
+  timeout_s: 240
+  max_turns: 20

@@ -1,0 +1,14 @@
+id: 12-find-secret-file
+title: Find which file contains a secret token
+category: exact
+prompt: |
+  Exactly one file in this directory tree contains the exact, case-sensitive string `SECRET_TOKEN=ab12-xk99-qq07`. Several other files
+  contain similar but different strings. Find the one file and write its path relative to the current directory, using
+  forward slashes and no leading `./`, into a file named answer.txt (the path only, nothing else).
+grader:
+  type: exact_match
+  source: file:answer.txt
+  expected: ops/runbooks/db-failover.md
+limits:
+  timeout_s: 240
+  max_turns: 20

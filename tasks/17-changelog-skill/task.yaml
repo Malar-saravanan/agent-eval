@@ -1,0 +1,58 @@
+id: 17-changelog-skill
+title: Update CHANGELOG.md following the changelog skill
+category: skill
+prompt: |
+  Update CHANGELOG.md for release 1.4.0, which was released on 2025-03-14, following the project's changelog
+  conventions. The changes in this release are:
+  - Added: dark mode [TCK-107]
+  - Fixed: wrong timezone in reports [TCK-104]
+  - Added: CSV export [TCK-101]
+  - Changed: default timeout is now 30s [TCK-110]
+  - Fixed: crash on empty input [TCK-099]
+requires:
+- skills
+setup:
+  skills:
+  - changelog
+grader:
+  type: fs_state
+  checks:
+  - file_contains:
+    - CHANGELOG.md
+    - |
+      ## [1.4.0] - 14 Mar 2025
+
+      ### Fixed
+  - file_contains:
+    - CHANGELOG.md
+    - |
+      ## [1.4.0] - 14 Mar 2025
+
+      ### Fixed
+      - Crash on empty input (TCK-099)
+      - Wrong timezone in reports (TCK-104)
+
+      ### Changed
+      - Default timeout is now 30s (TCK-110)
+
+      ### Added
+      - CSV export (TCK-101)
+      - Dark mode (TCK-107)
+
+      Signed-off-release: 1.4.0
+
+      ## 1.3.0 (2025-01-10)
+  - file_contains:
+    - CHANGELOG.md
+    - |-
+      # Changelog
+
+      ## [1.4.0]
+  - file_contains:
+    - CHANGELOG.md
+    - |-
+      * added webhooks
+      * fixed login redirect
+limits:
+  timeout_s: 240
+  max_turns: 20

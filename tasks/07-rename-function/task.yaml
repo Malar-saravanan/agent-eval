@@ -1,0 +1,13 @@
+id: 07-rename-function
+title: Rename calc_total to compute_total across files
+category: code
+prompt: |
+  The function `calc_total` is defined in pricing.py and used in cart.py, invoice.py and report.py.
+  Rename it to `compute_total` everywhere (definition, imports, calls, comments and docstrings) so that no occurrence of
+  the old name `calc_total` remains in any .py file. Behaviour must not change. Do not add a backwards-compatible alias.
+grader:
+  type: unit_tests
+  tests: tests
+limits:
+  timeout_s: 240
+  max_turns: 20

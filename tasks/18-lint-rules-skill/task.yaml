@@ -1,0 +1,17 @@
+id: 18-lint-rules-skill
+title: Fix style issues per the lint-rules skill
+category: skill
+prompt: |
+  Fix the style issues in app.py per the project's lint rules. Keep the behaviour and the function names
+  (`scale` and `total`) unchanged.
+requires:
+- skills
+setup:
+  skills:
+  - lint-rules
+grader:
+  type: unit_tests
+  tests: tests
+limits:
+  timeout_s: 240
+  max_turns: 20

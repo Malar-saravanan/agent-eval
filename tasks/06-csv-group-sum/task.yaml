@@ -1,0 +1,14 @@
+id: 06-csv-group-sum
+title: Write agg.py to sum a CSV column per group
+category: code
+prompt: |
+  Write a script agg.py (Python standard library only). Usage: `python agg.py <csv_file> <group_column> <sum_column>`.
+  It reads the CSV (first row is the header), sums the integer values of <sum_column> for each distinct value of
+  <group_column>, and prints one line per group, sorted alphabetically by group, formatted `<group>,<sum>`.
+  Example: `python agg.py sales.csv region amount` prints the total amount for each region (sales.csv is provided).
+grader:
+  type: unit_tests
+  tests: tests
+limits:
+  timeout_s: 240
+  max_turns: 20

@@ -1,0 +1,15 @@
+id: 20-memory-util-helper
+title: Apply remembered helper naming convention
+category: memory
+prompt: |
+  Add a helper function that reverses a string to helpers.py.
+requires:
+- memory
+setup:
+  memory_seed: 'Remember: helper functions in this project are named util_<verb>. Reply ''noted''.'
+grader:
+  type: unit_tests
+  tests: tests
+limits:
+  timeout_s: 240
+  max_turns: 20

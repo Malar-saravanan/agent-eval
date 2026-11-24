@@ -1,0 +1,34 @@
+id: 10-write-config-yaml
+title: Write config.yaml with specific values
+category: fs
+prompt: |
+  Create a file config.yaml in the current directory containing exactly these settings (valid YAML, no other keys):
+  - server.host: 0.0.0.0 (string)
+  - server.port: 9090 (integer)
+  - debug: false (boolean)
+  - logging.level: warning
+  - logging.file: /var/log/app.log
+  - allowed_origins: a list with two entries, in this order: https://example.com and https://admin.example.com
+  - database.url: postgres://db.internal:5432/app
+  - database.pool_size: 5 (integer)
+grader:
+  type: fs_state
+  checks:
+  - yaml_eq:
+    - config.yaml
+    - server:
+        host: 0.0.0.0
+        port: 9090
+      debug: false
+      logging:
+        level: warning
+        file: /var/log/app.log
+      allowed_origins:
+      - https://example.com
+      - https://admin.example.com
+      database:
+        url: postgres://db.internal:5432/app
+        pool_size: 5
+limits:
+  timeout_s: 240
+  max_turns: 20

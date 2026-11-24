@@ -1,0 +1,24 @@
+id: 16-explain-bug
+title: Explain a bug in plain language
+category: judge
+prompt: |
+  shopping.py has a bug: running it prints the output shown in actual_output.txt instead of the expected output in the
+  comments. Do not change the code. Instead write explanation.md (at most 200 words) for a teammate who does not
+  program: explain what is going wrong and why, what you see because of it, and how it should be fixed.
+grader:
+  type: llm_judge
+  files:
+  - explanation.md
+  rubric:
+  - 'Identifies the root cause: the default empty list is created only once and is shared by every call
+    that does not pass its own list (rather than a fresh list each call).'
+  - 'Describes the visible symptom: items added to one cart (alice) also show up in the other cart (bob),
+    so both carts contain both items.'
+  - 'Is written in plain language for a non-programmer: jargon is avoided or explained (an analogy is
+    welcome).'
+  - 'Proposes a correct fix: use None as the default and create a new list inside the function when none
+    is given (or an equivalent correct fix).'
+  pass_threshold: 0.75
+limits:
+  timeout_s: 240
+  max_turns: 20

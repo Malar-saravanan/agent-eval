@@ -1,0 +1,15 @@
+id: 11-count-errors
+title: Count ERROR lines in a time window
+category: exact
+prompt: |
+  app.log has one log entry per line in the form `YYYY-MM-DD HH:MM:SS LEVEL message`. Count the entries whose LEVEL
+  (the third whitespace-separated field) is exactly ERROR and whose timestamp is between 2024-03-05 10:00:00 and
+  2024-03-05 11:00:00, both ends inclusive. Note that some INFO/WARN messages merely mention the word ERROR; those do not
+  count. Write only the resulting integer into a file named answer.txt.
+grader:
+  type: exact_match
+  source: file:answer.txt
+  expected: '6'
+limits:
+  timeout_s: 240
+  max_turns: 20

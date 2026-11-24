@@ -1,0 +1,1 @@
+Old note: staging used SECRET_TOKEN=ab12-xk99-qq08 (rotated).

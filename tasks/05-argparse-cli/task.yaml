@@ -1,0 +1,14 @@
+id: 05-argparse-cli
+title: Add an argparse CLI to a script
+category: code
+prompt: |
+  greet.py currently just prints "Hello, World!". Turn it into a command line program using argparse:
+  `python greet.py --name Ada --times 2` must print "Hello, Ada!" on two separate lines.
+  Defaults: --name is "World", --times is 1. --times must be an integer; a non-integer value must make the program
+  exit with a non-zero status. Keep the file name greet.py (it is run as a script).
+grader:
+  type: unit_tests
+  tests: tests
+limits:
+  timeout_s: 240
+  max_turns: 20

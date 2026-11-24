@@ -1,0 +1,302 @@
+[
+ {
+  "task_id": "14-summarize-readme",
+  "response": "- tinycache is a small in-process Python library that caches function results in memory to avoid repeating expensive calls.\n- Install it with `pip install tinycache` and decorate functions with `@cached(ttl=60)`; entries expire after ttl seconds (default 300).\n- It keeps at most 1024 entries by default (least recently used evicted) and is per-process, so it is not shared between workers.",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "* tinycache caches the results of Python function calls in memory so costly database or HTTP calls are not repeated.\n* Usage: `pip install tinycache`, then put `@cached(ttl=60)` on a function.\n* Limits: default ttl is 300 seconds, 1024 entries with LRU eviction, and versions before 0.4 are not thread-safe.",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "- tinycache is an in-process caching library for Python.\n- Install with pip install tinycache and use the @cached decorator.\n- Entries expire after ttl seconds (default 300).\n- It is not shared between workers or machines.",
+  "human": [
+   false,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "# Summary\n- tinycache is an in-memory caching library for Python functions.\n- Install via `pip install tinycache`, then decorate with `@cached(ttl=60)`.\n- The cache is per-process and evicts the least recently used entries once full.",
+  "human": [
+   false,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "- tinycache is a small in-process Python caching library for function results.\n- Install it with `pip install tinycache` and use `@cached(ttl=60)`.\n- It also supports a Redis backend so the cache can be shared across machines.",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "- tinycache is an in-process Python library that caches function call results in memory.\n- Entries expire after ttl seconds, with a default of 300.\n- At most 1024 entries are kept by default; the least recently used is evicted when full.",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "- Install it with `pip install tinycache`.\n- The default ttl is 300 seconds.\n- The cache is not shared across workers or machines.",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "- tinycache is a small in-process Python caching library that stores function results in memory.\n- Install with `pip install tinycache` and use the `@cached(ttl=60)` decorator; the default ttl is 600 seconds.\n- It is per-process, so it is not shared between workers.",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "tinycache is a caching library for Python that stores results in memory. You can install it with pip. It also supports distributed caching across many servers, which makes it great for large deployments.",
+  "human": [
+   false,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "response": "- tinycache is a web framework for building REST APIs.\n- It is written in Rust and requires Docker.\n- It ships with a built-in database.",
+  "human": [
+   true,
+   false,
+   false,
+   false
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Retry fetch_json on timeout\n\nfetch_json now retries up to 3 times when the request times out,\nwaiting with exponential backoff between attempts. The default\ntimeout is also raised from 5 to 10 seconds.\n",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Add retry with backoff to fetch_json\n\nTransient timeouts made fetch_json fail on the first slow response.\nRetry up to MAX_RETRIES (3) times, sleeping 2**attempt seconds\nbetween tries, and re-raise the last error if all attempts fail.\n",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Add retry logic with exponential backoff to fetch_json and increase the default timeout\n\nfetch_json retries on TimeoutError up to 3 times and the default timeout goes from 5s to 10s.\n",
+  "human": [
+   false,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Added retries to fetch_json\n\nfetch_json now retries on timeouts up to 3 times with exponential\nbackoff and the default timeout is doubled to 10 seconds.\n",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Add retries to fetch_json.\n\nRetry up to 3 times on timeout with exponential backoff between attempts.\n",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Add retry to fetch_json\nfetch_json now retries on timeouts up to 3 times with exponential backoff.\nThe default timeout is raised from 5 to 10 seconds.\n",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Retry fetch_json on timeout\n",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Add caching to fetch_json\n\nCache responses so repeated requests to the same URL do not hit the network again.\n",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "Retry fetch_json on any error\n\nRetry up to 5 times on any exception with a fixed 1 second delay between attempts.\n",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "15-commit-message",
+  "response": "fixed stuff\n\nchanges\n",
+  "human": [
+   true,
+   false,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "Think of the function's default cart as one shared notebook that gets created once, the first time the program loads, and then handed to everyone who does not bring their own. When Alice buys an apple it is written in that notebook. When Bob buys bread it goes into the very same notebook, so both of them see both items.\n\nThe fix is to not put a ready-made list in the function's default. Instead say 'no cart given' (None) and, inside the function, start a brand-new empty list whenever that happens. Then every shopper gets their own fresh notebook.",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "The empty cart that is used when you do not supply one is made only once and then reused for every later call. That is why Bob's cart already contains Alice's apple: both are really the same list, and both print apple and bread.\n\nTo fix it, let the default be 'nothing' (None) and create a new empty list inside the function each time it is needed.",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "The default argument is evaluated once at function definition time and bound to the function object. Because lists are mutable, the aliased default is mutated on each invocation, so state persists across calls. Both return values reference the same object.\n\nRemediation: set the default to None and instantiate a fresh list in the function body when the argument is None.",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "When the program starts, one empty cart is created and kept as the standard cart. Every time you add something without naming a cart, it goes into that same standard cart. So Alice's apple and Bob's bread end up together, and both people see apple and bread when they print their carts.",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "The add_item function is broken: the append step puts items into the wrong list, which is why Alice and Bob both see apple and bread. To fix it, use extend instead of append so each item is added correctly to its own cart.",
+  "human": [
+   false,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "The program makes the standard empty cart once, when it first loads, and then reuses that same cart every time nobody supplies their own. To fix it, make the default 'nothing' (None) and build a new empty cart inside the function whenever it gets nothing.",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "Alice's cart and Bob's cart are really the same cart behind the scenes, so the apple shows up in Bob's cart and the bread shows up in Alice's. The default empty cart is created only one time and reused. The fix is to rename the variable cart to basket, which gives each person a separate one.",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "There is a problem with the list in the code. It is a common mistake that many people make. The way to fix it is to be more careful when writing functions and test them properly.",
+  "human": [
+   false,
+   false,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "The code does not work because of a syntax problem with the print lines, which probably need different formatting in the version of Python being used. Updating the print statements should resolve the issue.",
+  "human": [
+   false,
+   false,
+   true,
+   false
+  ]
+ },
+ {
+  "task_id": "16-explain-bug",
+  "response": "The standard cart is created once and then shared by every call, like one basket at a shop door that everyone drops items into. So Alice and Bob both see apple and bread.\n\nTo fix it, set the default cart to None. (Then the function just works with nothing as the cart.)",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ]
+ }
+]

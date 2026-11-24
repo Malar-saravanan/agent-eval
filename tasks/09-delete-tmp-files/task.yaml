@@ -1,0 +1,20 @@
+id: 09-delete-tmp-files
+title: Delete .tmp files except under keep/
+category: fs
+prompt: |
+  Delete every file with the extension .tmp anywhere in this directory tree, EXCEPT .tmp files located under the
+  top-level keep/ directory (at any depth), which must be left untouched. Do not delete any other files.
+grader:
+  type: fs_state
+  checks:
+  - not_exists: a.tmp
+  - not_exists: cache/b.tmp
+  - not_exists: cache/deep/c.tmp
+  - file_exists: keep/d.tmp
+  - file_exists: keep/sub/e.tmp
+  - file_exists: main.py
+  - file_exists: cache/data.json
+  - file_exists: cache/deep/notes.txt
+limits:
+  timeout_s: 240
+  max_turns: 20

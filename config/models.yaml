@@ -1,0 +1,6 @@
+# Model registry. Add a model = add an entry here (and its deployment env var in .env).
+# Prices are USD per 1M tokens. gpt-4.1-mini: public list price $0.40 in / $1.60 out
+# (third-party trackers; a dated-snapshot listing shows $0.44 input). Verify on the Azure pricing page.
+gpt-4.1-mini:
+  deployment_env: MODEL1_DEPLOYMENT
+  price_per_1m: {input: 0.40, output: 1.60}

@@ -1,0 +1,30 @@
+id: 08-organize-by-extension
+title: Organize files into folders by extension
+category: fs
+prompt: |
+  The current directory contains several loose files. Move every file into a sub-folder named after its extension
+  without the dot (for example a.txt goes to txt/a.txt, photo.jpg goes to jpg/photo.jpg). Create the folders as needed.
+  Do not rename files or change their contents, and leave no loose files in the top-level directory.
+grader:
+  type: fs_state
+  checks:
+  - file_exists: txt/a.txt
+  - file_exists: txt/b.txt
+  - file_exists: jpg/photo.jpg
+  - file_exists: md/notes.md
+  - file_exists: csv/data.csv
+  - file_exists: csv/report.csv
+  - file_exists: py/script.py
+  - not_exists: a.txt
+  - not_exists: b.txt
+  - not_exists: photo.jpg
+  - not_exists: notes.md
+  - not_exists: data.csv
+  - not_exists: report.csv
+  - not_exists: script.py
+  - file_contains:
+    - py/script.py
+    - print
+limits:
+  timeout_s: 240
+  max_turns: 20

@@ -1,0 +1,47 @@
+services:
+  worker:                      # runs harnesses (Hermes, OpenCode), graders, and the metering model gateway
+    build: ./worker
+    init: true                 # reap orphaned harness child processes
+    env_file: .env
+    environment:
+      MODELS_FILE: /config/models.yaml
+      TASKS_SRC: /tasks-src      # copied to a root-only dir at boot (agents cannot read hidden tests)
+      RUNS_DIR: /runs
+    volumes:
+      - ./config:/config:ro
+      - ./tasks:/tasks-src:ro
+      - runs:/runs
+      - hermes-template:/opt/hermes-template
+      - harness-cache:/opt/cache
+      - ipc:/ipc                 # root-only: the worker publishes the /trial secret here for the API
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 5s
+      retries: 20
+
+  api:                         # NestJS control plane + built Vue UI on :3000
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports: ["${API_PORT:-3000}:3000"]
+    environment:
+      WORKER_URL: http://worker:8000
+      TASKS_DIR: /tasks
+      MODELS_FILE: /config/models.yaml
+      DB_PATH: /data/evals.db
+      WORKER_TOKEN_FILE: /ipc/worker-token
+      CONCURRENCY: ${CONCURRENCY:-4}
+    volumes:
+      - ./config:/config:ro
+      - ./tasks:/tasks:ro
+      - data:/data
+      - ipc:/ipc:ro
+    depends_on:
+      worker: {condition: service_healthy}
+
+volumes:
+  runs:
+  data:
+  hermes-template:
+  harness-cache:
+  ipc:

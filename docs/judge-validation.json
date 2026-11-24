@@ -1,0 +1,482 @@
+[
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"summary.md contains exactly three bullet points and no other non-empty lines.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"First bullet clearly states what tinycache is and does (in-process caching of function results).\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Second bullet explains how to install and use tinycache (pip install and @cached decorator).\"}, {\"id\": 4, \"pass\": true, \"reason\": \"All claims are supported by the README; no invented features or behavior.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"summary.md contains exactly three bullet points and no other non-empty lines.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"First bullet clearly states what tinycache is and does (in-process caching of function results).\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Second bullet explains how to install and use tinycache (pip install and @cached decorator).\"}, {\"id\": 4, \"pass\": true, \"reason\": \"All claims are supported by the README; no invented features or behavior.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   false,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   false,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"summary.md contains four bullet points instead of exactly three.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"One bullet clearly states what tinycache is and does.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"One bullet explains how to install and use tinycache.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"All claims are supported by the README; no invented information.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   false,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   false,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"summary.md contains a heading line '# Summary', violating the requirement of only three bullet points and no other non-empty lines.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"One bullet states that tinycache is an in-memory caching library for Python functions, describing what it does.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"One bullet explains how to install and use tinycache with pip and the @cached decorator.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"All claims are supported by the README; no invented features or behavior.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   true,
+   true,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"summary.md has three bullet points but includes an unsupported third bullet about Redis backend not confirmed in README.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"First bullet correctly states what tinycache is and does.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Second bullet explains how to install and use tinycache.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Third bullet introduces Redis backend not supported by README, thus an invented feature.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ],
+  "judge": [
+   false,
+   true,
+   false,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"summary.md has three bullet points but includes additional details beyond simple bullets, no extra lines though.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"First bullet clearly states what tinycache is and does.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"No bullet explains how to install or use tinycache (no pip install or @cached decorator mentioned).\"}, {\"id\": 4, \"pass\": true, \"reason\": \"All claims appear supported by the README, no invented features or numbers.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ],
+  "judge": [
+   false,
+   false,
+   true,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"summary.md has three bullets but includes unsupported claims (ttl and cache sharing) not stated in README.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"No bullet clearly states what tinycache is or does (in-process caching of function results).\"}, {\"id\": 3, \"pass\": true, \"reason\": \"One bullet correctly states how to install tinycache using pip.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Bullets about default ttl and cache sharing are not supported by README, thus including invented information.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Exactly three bullet points with no extra lines.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"First bullet states what tinycache is and does.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Second bullet explains how to install and use it.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"All claims are supported by the README; no invented information.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   false,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   true,
+   true,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"summary.md has only one bullet point instead of exactly three.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Bullet point states that tinycache is a caching library that stores results in memory.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Bullet point mentions installation with pip.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Claim about distributed caching across many servers is not supported by the README.\"}]"
+ },
+ {
+  "task_id": "14-summarize-readme",
+  "human": [
+   true,
+   false,
+   false,
+   false
+  ],
+  "judge": [
+   false,
+   false,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"summary.md has three bullet points but includes incorrect content unrelated to the task.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"No bullet correctly states what tinycache is or does (in-process caching of function results).\"}, {\"id\": 3, \"pass\": false, \"reason\": \"No bullet explains how to install or use tinycache (pip install or @cached decorator).\"}, {\"id\": 4, \"pass\": false, \"reason\": \"All claims are unsupported or incorrect according to the README; content is invented or unrelated.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Subject is in imperative mood and has no trailing period.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Blank line separates subject from non-empty body.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Message accurately describes the changes in the diff.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Subject is in imperative mood and has no trailing period.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Blank line separates subject and non-empty body.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Message does not mention raising the default timeout from 5 to 10 as in the diff.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   false,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   false,
+   true,
+   false,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"Subject line exceeds 50 characters (72 characters).\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Subject is in imperative mood and does not end with a period.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"No blank line separating subject and body.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Message accurately describes the changes in the diff.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   false,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Subject is not in imperative mood; 'Added' is past tense and ends without a period.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Blank line separates subject from non-empty body.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Message accurately describes the changes in the diff.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Subject is in imperative mood and has no trailing period.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"No blank line between subject and body.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Message does not mention raising the default timeout from 5 to 10 as in the diff.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Subject is in imperative mood and has no trailing period.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Blank line separates subject from non-empty body.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Message accurately describes the changes in the diff.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ],
+  "judge": [
+   true,
+   false,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Subject is not clearly in imperative mood.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"No blank line and no body present after subject.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Message does not describe raising the default timeout from 5 to 10 or exponential backoff as required.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   true,
+   false,
+   true,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Subject is not in imperative mood; 'Add caching' is acceptable but does not reflect the diff about retrying and timeout changes.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Blank line separates subject and body.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Message describes caching, which is not in the diff; diff is about retrying fetch_json and timeout changes.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   true,
+   true,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Subject line is under 50 characters.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Subject is in imperative mood and has no trailing period.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"No blank line between subject and body.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Message does not mention exponential backoff or raising timeout from 5 to 10 as required.\"}]"
+ },
+ {
+  "task_id": "15-commit-message",
+  "human": [
+   true,
+   false,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   false,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"Subject line exceeds 50 characters or is missing.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Subject is not in imperative mood and ends with a period.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"No blank line separating subject and body; message is not properly formatted.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Message does not accurately describe the diff; content is vague and unrelated.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Clearly explains the root cause using the shared notebook analogy for the default list being created once and shared.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Describes the symptom that items added by one person appear in the other's cart.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Uses plain language and an analogy suitable for a non-programmer, avoiding jargon.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Proposes the correct fix of using None as default and creating a new list inside the function.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Clearly explains that the default empty list is created once and shared across calls.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Describes the symptom that Bob's cart contains Alice's items, showing both items in both carts.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Uses plain language and an easy-to-understand explanation without jargon.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Proposes the correct fix of using None as default and creating a new list inside the function.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   true,
+   true,
+   false,
+   true
+  ],
+  "judge": [
+   true,
+   false,
+   false,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Correctly identifies that the default list is created once and shared across calls.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Does not describe the visible symptom of items from one cart appearing in another.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"Uses technical jargon without simplification or analogy, not suitable for a non-programmer.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Proposes the correct fix of using None as default and creating a new list inside the function.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   true,
+   true,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"Does not explicitly identify that the default empty list is created once and shared across calls.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Clearly describes that items added to one cart appear in the other, causing both to show all items.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Uses plain language and an easy-to-understand explanation without jargon.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Does not propose any fix or mention how to correct the problem.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   false,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   true,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"Does not identify the root cause about the default empty list being shared across calls.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Describes the symptom that both Alice and Bob see both items in their carts.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"Uses programming terms like 'append' and 'extend' without explanation; no analogy or plain language.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Does not propose the correct fix involving using None as default and creating a new list inside the function.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   true,
+   false,
+   true,
+   true
+  ],
+  "judge": [
+   true,
+   false,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Correctly identifies that the default empty list is created once and shared across calls.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Does not describe the visible symptom of items from one cart appearing in another.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Uses plain language and a simple explanation suitable for non-programmers.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Proposes the correct fix of using None as default and creating a new list inside the function.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   true,
+   true,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"Does not explicitly identify the root cause about the default empty list being created once and shared.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Clearly describes the symptom that items added to one cart appear in the other.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Uses plain language and an analogy understandable to non-programmers.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Proposes renaming the variable instead of the correct fix of using None as default and creating a new list inside the function.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   false,
+   false,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   false,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"Does not identify the root cause of the bug.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Does not describe the visible symptom seen in the output.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"Explanation is vague and uses no plain language or analogy.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"No fix or solution is proposed.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   false,
+   false,
+   true,
+   false
+  ],
+  "judge": [
+   false,
+   false,
+   false,
+   false
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": false, \"reason\": \"Does not identify the root cause related to the default empty list being shared.\"}, {\"id\": 2, \"pass\": false, \"reason\": \"Does not describe the visible symptom of items appearing in both carts.\"}, {\"id\": 3, \"pass\": false, \"reason\": \"Uses technical terms like 'syntax problem' and 'print lines' without clear explanation or analogy.\"}, {\"id\": 4, \"pass\": false, \"reason\": \"Does not propose the correct fix involving using None as default and creating a new list inside the function.\"}]"
+ },
+ {
+  "task_id": "16-explain-bug",
+  "human": [
+   true,
+   true,
+   true,
+   false
+  ],
+  "judge": [
+   true,
+   true,
+   true,
+   true
+  ],
+  "reasoning": "[{\"id\": 1, \"pass\": true, \"reason\": \"Correctly identifies that the default list is created once and shared across calls.\"}, {\"id\": 2, \"pass\": true, \"reason\": \"Clearly describes that items added to one cart appear in the other, causing both to contain all items.\"}, {\"id\": 3, \"pass\": true, \"reason\": \"Uses a simple analogy (one basket at a shop door) and avoids technical jargon.\"}, {\"id\": 4, \"pass\": true, \"reason\": \"Proposes using None as the default and creating a new list inside the function as the fix.\"}]"
+ }
+]
