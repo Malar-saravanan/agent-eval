@@ -47,7 +47,7 @@ web/      Vue 3 + TypeScript UI (Vite).
 worker/   Python / FastAPI — metering model gateway, harness adapters, graders, trial runner.
 tasks/    Task definitions (task.yaml + fixture/ + hidden tests/ + skills/).
 config/   Model registry and prices.
-docs/     design, experiment, cost, limits, judge-validation, api, submission-checklist, demo-script.
+docs/     project-summary (1-page brief), design, experiment, cost, limits, judge-validation, api.
 ```
 
 ---

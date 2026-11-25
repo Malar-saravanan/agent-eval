@@ -1,7 +1,7 @@
 # Screenshots
 
 Captured from the live UI (`http://localhost:3100/`) on the final committed
-build. Use them alongside [`docs/ONE-PAGER.md`](../ONE-PAGER.md).
+build. Use them alongside [`docs/project-summary.md`](../project-summary.md).
 
 | # | File | What it shows |
 |---|------|---------------|
