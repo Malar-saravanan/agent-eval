@@ -1,298 +1,249 @@
 # Agent Evals Platform — project summary
 
-**Problem.** Agents ship as *harness × model × settings*. Any of the three can change. The platform answers, with evidence, whether a change made the agent better, worse, or the same — and how confident we are.
+Agents differ by harness, model, and settings. This stack runs the same tasks against those combinations, scores them, and says whether a change actually moved the needle or just sat inside noise.
 
-**Stack.** NestJS control plane (SQLite, REST), Vue 3 UI, Python / FastAPI worker. One Docker command to run.
-
----
-
-## High-level design
-
-```
-┌──────────────┐      REST        ┌────────────────────┐      HTTP       ┌──────────────────────────┐      HTTPS       ┌───────────────┐
-│              │ ───────────────► │                    │ ──────────────► │                          │ ───────────────► │               │
-│   Vue  UI    │                  │     NestJS API     │                 │     Python  Worker       │                  │  Azure OpenAI │
-│              │ ◄─────────────── │   (SQLite, state)  │ ◄────────────── │ (stateless, per-request) │ ◄─────────────── │               │
-└──────────────┘  polling 3 s     └────────────────────┘                 └──────────────────────────┘                  └───────────────┘
-                                    │  configs           │ /trial           │ sandbox + harness adapter
-                                    │  experiments       │ /v1/chat/...     │ metering gateway
-                                    │  trial queue       │                  │ grader
-                                    │  statistics        │                  │
-                                    │  export JSON/CSV   │                  │
-```
-
-Four distinct responsibilities, three HTTP hops, one JSON contract between API and worker. The API owns *all* state. The worker is stateless — every call carries everything it needs.
-
-### Component responsibilities
-
-| Component   | Owns                                                                          | Does not own                          |
-|-------------|-------------------------------------------------------------------------------|---------------------------------------|
-| **UI**      | Rendering, polling, URL-based navigation                                       | Statistics, auth, mutation ordering    |
-| **API**     | Configs, experiments, trials, queue + retries, bootstrap statistics, exports   | Model calls, sandboxing, grading       |
-| **Worker**  | Harness adapters, metering gateway, graders, trial sandbox, usage accounting   | Persistence, scheduling                |
-| **Azure**   | Model inference                                                                | Everything else                        |
+**Stack.** NestJS API (SQLite), Vue 3 UI, Python / FastAPI worker. `docker compose up --build`.
 
 ---
 
-## Trial lifecycle (swimlane)
-
-One trial, from "launch experiment" in the UI to a persisted row with full trace.
+## How the pieces talk
 
 ```
-         UI              NestJS API                       Python Worker                         Azure OpenAI
-         │                   │                                 │                                    │
- launch  ├──POST experiments─►                                 │                                    │
-         │                   │ validate, dedupe,               │                                    │
-         │                   │ create N trial rows             │                                    │
-         │                   │ status = queued                 │                                    │
-         │                   │                                 │                                    │
-         │                   │ trial queue (concurrency = 4)   │                                    │
-         │                   │ take 1 trial                    │                                    │
-         │                   │                                 │                                    │
-         │                   ├─POST /trial + worker-token─────►│                                    │
-         │                   │                                 │ allocate exclusive uid              │
-         │                   │                                 │ create /runs/<id>/{work,home}       │
-         │                   │                                 │ chown, chmod 700                    │
-         │                   │                                 │ issue per-trial gateway secret      │
-         │                   │                                 │                                    │
-         │                   │                                 │ invoke harness CLI as uid          │
-         │ UI polls summary  │                                 │   ├─ seed session (if memory on)    │
-         │ /trials /failures │                                 │   │   ├─ POST /v1/chat/completions─►│
-         │ every 3 s         │                                 │   │   │     auth: Bearer <secret>   │
-         │                   │                                 │   │   │     ◄──── chat response ────┤
-         │                   │                                 │   │   │     meter tokens, cost     │
-         │                   │                                 │   │   │     check step/token budget │
-         │                   │                                 │   │   └─ repeat until done          │
-         │                   │                                 │   │                                │
-         │                   │                                 │   └─ task session (same shape)      │
-         │                   │                                 │                                    │
-         │                   │                                 │ invoke grader as uid               │
-         │                   │                                 │   (hidden tests run root-owned,     │
-         │                   │                                 │    outside the workdir)             │
-         │                   │                                 │                                    │
-         │                   │                                 │ release gateway secret              │
-         │                   │                                 │ reap uid processes                 │
-         │                   │                                 │ delete /runs/<id>/                  │
-         │                   │                                 │                                    │
-         │                   │◄─────── trial result ───────────┤                                    │
-         │                   │ store status, score, usage,     │                                    │
-         │                   │ events, trace, meta             │                                    │
-         │                   │                                 │                                    │
-         │                   │ if status == infra_error:       │                                    │
-         │                   │   retry (max 3, backoff)        │                                    │
-         │                   │                                 │                                    │
-         │ UI reads summary, │                                 │                                    │
-         │ compare, trials   │                                 │                                    │
-         │◄─── statistics ───┤ compute on demand               │                                    │
+  Vue UI                    NestJS API                     Python worker                   Azure OpenAI
+ ┌────────┐    REST      ┌──────────────┐     HTTP      ┌─────────────────┐    HTTPS    ┌─────────────┐
+ │        │ ───────────► │              │ ────────────► │                 │ ──────────► │             │
+ │  SPA   │              │  SQLite      │               │  /trial         │             │  chat       │
+ │        │ ◄─────────── │  queue       │ ◄──────────── │  /v1/chat/...   │ ◄────────── │             │
+ └────────┘  poll 3s     │  stats       │               │  graders        │             └─────────────┘
+                         └──────────────┘               └─────────────────┘
 ```
 
-Infrastructure failure (worker killed, upstream 429, grader crash) is retried and never attributed to the agent. The whitespace heartbeats from `/trial` keep the response open for the ~20-minute budget without triggering a duplicate retry from Node.
+The API keeps all state. The worker does not; each `/trial` request includes everything it needs.
+
+| Piece    | Owns                                              | Does not own                    |
+|----------|---------------------------------------------------|---------------------------------|
+| UI       | screens, polling, URL state                       | stats, queue                    |
+| API      | configs, experiments, trials, retries, export     | model calls, sandbox, grading   |
+| Worker   | harnesses, gateway, graders, sandbox, usage       | persistence                     |
+| Azure    | inference                                         | everything else                 |
 
 ---
 
-## Isolation boundaries (low-level)
+## One trial (swimlane)
 
-Two principals share a host kernel and the worker container's network: the *worker process* (root) and the *agent* (per-trial unprivileged uid, running inside the worker container). The agent can execute arbitrary shell and must not be able to reach anything that would let it cheat or exfiltrate credentials.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor UI
+    participant API as NestJS API
+    participant W as Python worker
+    participant AZ as Azure OpenAI
 
+    UI->>API: POST /experiments
+    Note over API: validate, create trial rows<br/>status = queued
+    loop concurrency = 4
+        API->>W: POST /trial  (x-worker-token)
+        Note over W: exclusive uid<br/>/runs/id work + home<br/>chmod 700, gateway secret
+        W->>W: run harness CLI as that uid
+        opt memory on
+            loop seed until saved (max 3)
+                W->>AZ: POST /v1/chat/completions
+                AZ-->>W: chat (metered)
+            end
+        end
+        loop task session until done
+            W->>AZ: POST /v1/chat/completions
+            AZ-->>W: chat
+            Note over W: count tokens / cost<br/>enforce step + token budget
+        end
+        W->>W: grade as uid<br/>(hidden tests stay root-owned)
+        W->>W: drop secret, reap processes,<br/>delete /runs/id
+        W-->>API: trial result JSON
+        Note over API: store status, score,<br/>usage, events, meta
+        opt status = infra_error
+            Note over API: retry up to 3, backoff
+        end
+    end
+    loop every 3s while running
+        UI->>API: GET summary / trials / failures
+        API-->>UI: progress
+    end
+    UI->>API: GET compare / stats
+    API-->>UI: CIs and verdict
 ```
-                             worker container
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                      │
-│   worker process (root, uid = 0)                       agent  (uid = 2xxxx)          │
-│   ┌─────────────────────────────────────────┐         ┌───────────────────────────┐  │
-│   │  /srv/tasks            mode 700         │   ✗     │                           │  │
-│   │  hidden tests, solutions                │ ─────── │                           │  │
-│   │  Azure key in env                       │   ✗     │                           │  │
-│   │  /ipc/worker-token     mode 600         │ ─────── │                           │  │
-│   │  reads other trial dirs                 │   ✗     │                           │  │
-│   │                                         │ ─────── │                           │  │
-│   │                                         │         │  /runs/<id>  mode 700     │  │
-│   │                                         │   ✓     │  own workdir and home     │  │
-│   │                                         │ ───────►│  write, execute           │  │
-│   │                                         │   ✓     │  /opt/cache  (shared)     │  │
-│   │                                         │ ───────►│  harness binaries         │  │
-│   │                                         │         │                           │  │
-│   │  /v1/chat/completions                   │   ✓     │  per-trial bearer secret  │  │
-│   │  requires per-trial bearer secret       │◄────────│  (issued at trial start,  │  │
-│   │                                         │         │   released at end)        │  │
-│   │                                         │         │                           │  │
-│   │  POST /trial                            │   ✗     │                           │  │
-│   │  requires worker-token (API only)       │ ────────│                           │  │
-│   └─────────────────────────────────────────┘         └───────────────────────────┘  │
-│                                                                                      │
-└──────────────────────────────────────────────────────────────────────────────────────┘
-```
 
-Verified live: an unprivileged uid gets 401 on `/trial` with or without a wrong token, 401 on `/v1/chat/completions` with or without a forged bearer, and `Permission denied` on `/srv/tasks` and `/ipc/worker-token`. An integrity audit of 1,124 real tool calls found zero touches on hidden tests, solutions, keys, or other trials.
+If the worker dies, Azure 429s, or the grader crashes, the trial is retried. That does not count as the agent failing. `/trial` sends a space every 15s so Node does not drop the connection during a long run.
 
 ---
 
-## Status classification (low-level)
+## Isolation
 
-Every trial resolves to exactly one of seven statuses. Statistics use only `passed`, `failed`, and `timeout` — the rest are explicitly excluded. This is the decision tree:
+Worker process is root. The agent is a throwaway uid. They share the worker container and its network.
 
 ```
-            trial outcome
-                 │
-        ┌────────┴─────────┐
-        │  harness ran     │
-        │  harness failed  │
-        └────────┬─────────┘
-                 │
-      ┌──────────┴──────────────┬───────────────────────┬────────────────────────┐
-      │                         │                       │                        │
-  no output                 timed out              completion marker         requirement
-  OR exit < 0               past limit             missing + exit ≠ 0        mismatch
-  OR lost connection                                                         (harness lacks
-      │                         │                       │                     capability)
-      ▼                         ▼                       ▼                        │
- infra_error              timeout, score 0         infra_error                   ▼
- retried 3x               (agent outcome)                                   not_applicable
-                                │                                           (excluded)
-                                │
-                                ▼
-                     ┌──────────┴──────────┐
-                     │ run grader          │
-                     └──────────┬──────────┘
-                                │
-              ┌─────────────────┼─────────────────────────┐
-              │                 │                         │
-         grader crashed    tests passed             tests failed
-         or definition     + summary matches        or output wrong
-         broken                │                         │
-              │                ▼                         ▼
-              ▼           passed, score ≥ 0.75       failed
-         grader_error     + grade event appended     + grade event appended
-         (excluded)
-                                                  │
-                                          any gateway error
-                                          during the trial?
-                                                  │
-                                                yes│
-                                                  ▼
-                                            reclassify infra_error
-                                            (conservative: a throttled
-                                             trial may not be the agent's
-                                             fault)
+                         worker container
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│   worker (uid 0)                         agent (uid 2xxxx)          │
+│  ┌──────────────────────────────┐       ┌────────────────────────┐  │
+│  │ /srv/tasks           700     │  ✗    │                        │  │
+│  │ hidden tests, solutions      │────── │                        │  │
+│  │ Azure key in env             │  ✗    │                        │  │
+│  │ /ipc/worker-token    600     │────── │                        │  │
+│  │ other trial dirs             │  ✗    │                        │  │
+│  │                              │────── │                        │  │
+│  │                              │  ✓    │ /runs/<id>      700    │  │
+│  │                              │─────► │ own workdir + home     │  │
+│  │                              │  ✓    │ /opt/cache (shared)    │  │
+│  │                              │─────► │ harness binaries       │  │
+│  │ /v1/chat/completions         │  ✓    │ per-trial bearer       │  │
+│  │ needs that trial's secret    │◄───── │ issued at start        │  │
+│  │ POST /trial                  │  ✗    │                        │  │
+│  │ needs worker-token (API)     │────── │                        │  │
+│  └──────────────────────────────┘       └────────────────────────┘  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-A passing trial is never downgraded. Budget exhaustion is the agent's outcome and is graded normally — the trace still carries the `budget_exhausted` event.
+Unprivileged uid: 401 on `/trial` and on `/v1/chat/completions` with a bad or missing token; `Permission denied` on `/srv/tasks` and `/ipc/worker-token`. A pass over 1,124 tool calls in real runs did not touch hidden tests, solutions, keys, or other trials.
 
 ---
 
-## Data model (low-level)
+## Status
 
-Three tables, SQLite, one unique constraint prevents duplicate trial cells.
+Stats use `passed`, `failed`, and `timeout`. Everything else is dropped.
 
-```
-┌─────────────────────────┐          ┌───────────────────────────┐          ┌─────────────────────────────┐
-│ configs                 │          │ experiments               │          │ trials                      │
-├─────────────────────────┤          ├───────────────────────────┤          ├─────────────────────────────┤
-│ id          PK          │◄─┐       │ id              PK        │◄─┐       │ id              PK          │
-│ name                    │  │       │ name                      │  │       │ experiment_id   FK ─────────┤
-│ version     INT         │  └───────┤ config_ids      JSON[]    │  └───────┤ config_id       FK ─────────┤
-│ hash        12 hex      │          │ task_ids        JSON[]    │          │ task_id                     │
-│ harness                 │          │ trials_per_task INT       │          │ trial_idx                   │
-│ model                   │          │ created_at                │          │ status          enum(7)     │
-│ settings    JSON        │          └───────────────────────────┘          │ score           REAL?       │
-│ created_at              │                                                 │ reasoning                   │
-└─────────────────────────┘                                                 │ duration_ms                 │
-                                                                            │ cost_usd                    │
-   immutable:                                                               │ usage           JSON        │
-   edit settings → new                                                      │ final_text                  │
-   name@vN with new hash                                                    │ files           JSON        │
-                                                                            │ events          JSON        │
-   trials row carries full                                                  │ meta            JSON        │
-   provenance so results                                                    │ attempts                    │
-   survive config edits                                                     ├─────────────────────────────┤
-                                                                            │ UNIQUE (experiment_id,      │
-                                                                            │   config_id, task_id,       │
-                                                                            │   trial_idx)                │
-                                                                            └─────────────────────────────┘
-
-   meta: harness_version, model_deployment, model_resolved (actual Azure snapshot id),
-         task_hash (fixture + tests + skills), budget{max_steps, max_tokens}, nudge, uid
+```mermaid
+flowchart TD
+    start[trial outcome] --> ran{harness ran?}
+    ran -->|no output / exit less than 0 / lost connection| infra[infra_error, retry x3]
+    ran -->|past time limit| timeout[timeout, score 0]
+    ran -->|no completion marker and exit not 0| infra
+    ran -->|harness missing a required capability| na[not_applicable, excluded]
+    ran -->|normal end| grade[run grader]
+    grade -->|grader crashed or bad definition| gerr[grader_error, excluded]
+    grade -->|tests pass, summary matches| pass[passed, score at least 0.75]
+    grade -->|tests fail or wrong output| fail[failed]
+    fail --> gw{any gateway error?}
+    timeout --> gw
+    gw -->|yes| infra2[reclassify infra_error]
+    gw -->|no| keep[keep original status]
 ```
 
-Every trial row is self-describing: given the row alone, we can state which harness version, which model snapshot, which task content hash, and which budget produced it. Config edits do not retroactively change past results.
+A pass is never rewritten. Hitting the step/token budget is treated as the agent's result and still graded; the trace gets a `budget_exhausted` event.
 
 ---
 
-## Load-bearing decisions
+## Data
 
-| Decision | Rationale |
+SQLite. Three tables. Unique on `(experiment_id, config_id, task_id, trial_idx)` so a cell cannot be inserted twice.
+
+```
+ configs                         experiments                      trials
+┌──────────────────────┐        ┌──────────────────────┐        ┌──────────────────────────┐
+│ id            PK     │◄──┐    │ id            PK     │◄──┐    │ id            PK         │
+│ name                 │   │    │ name                 │   │    │ experiment_id FK ────────┤
+│ version       INT    │   └────┤ config_ids    JSON   │   └────┤ config_id     FK ────────┤
+│ hash          12 hex │        │ task_ids      JSON   │        │ task_id                  │
+│ harness              │        │ trials_per_task INT  │        │ trial_idx                │
+│ model                │        │ created_at           │        │ status        enum(7)    │
+│ settings      JSON   │        └──────────────────────┘        │ score         REAL?      │
+│ created_at           │                                        │ reasoning                │
+└──────────────────────┘                                        │ duration_ms              │
+                                                                │ cost_usd                 │
+ edit settings → new name@vN                                    │ usage         JSON       │
+ with a new hash. Old trial                                     │ final_text               │
+ rows keep their config_id.                                     │ files         JSON       │
+                                                                │ events        JSON       │
+                                                                │ meta          JSON       │
+                                                                │ attempts                 │
+                                                                │ UNIQUE (experiment_id,   │
+                                                                │   config_id, task_id,    │
+                                                                │   trial_idx)             │
+                                                                └──────────────────────────┘
+```
+
+`meta` holds harness version, Azure deployment, resolved snapshot id, task hash (fixture + tests + skills), budget, nudge, uid. The trial row is enough to say what produced it.
+
+---
+
+## Choices that matter
+
+| Choice | Why |
 |---|---|
-| **Metering gateway in front of Azure** | Both harnesses speak OpenAI chat. Budgets, auth, parameter sanitisation, and cost accounting live in one place — not duplicated per adapter, not trusted to harness-reported numbers. |
-| **Task is the unit of analysis, not the trial** | Trials within a task are repeated measures. Aggregate CIs are driven by task count; adding trials only sharpens individual tasks. Drives the paired hierarchical bootstrap. |
-| **Platform failure ≠ agent failure** | A trial that OOM-killed, lost its connection, or hit a 429 cannot count against the agent. Status enum is first-class; these are retried or excluded, never silently scored zero. |
-| **Agents are untrusted** | Per-trial unprivileged uid, scrubbed env, root-only task directory, no-follow file reads in graders, hidden pytest runs outside the workdir, random per-trial gateway bearer. |
-| **Configs are immutable** | Content-hashed `name@vN`. A result always points at the exact configuration that produced it. |
-| **Adapters, not forks** | New harness = one file + one registry entry. New model = one YAML line. Core stays untouched. Verified by a regression test running a dummy third harness end-to-end. |
+| Gateway in front of Azure | Both harnesses speak OpenAI chat. Budgets, auth, param stripping, and cost live in one place. Harness-reported usage is not trusted. |
+| Task is the unit of analysis | Trials inside a task are repeats. CIs scale with number of tasks. Paired hierarchical bootstrap. |
+| Platform fail ≠ agent fail | OOM, dropped connection, 429: retry or exclude. Not a zero. |
+| Agent is untrusted | Per-trial uid, scrubbed env, root-only tasks dir, graders do not follow symlinks, hidden pytest outside the workdir, random gateway bearer. |
+| Configs do not mutate | Content hash `name@vN`. Results point at the config that actually ran. |
+| Adapters, not forks | New harness: one file + registry. New model: one YAML line. There is a dummy third-harness test for this. |
 
 ## Trade-offs
 
-- **One container, not one per trial.** Isolation is a per-trial uid inside the worker. Fine for cooperative models; a determined adversary sharing the kernel is out of scope.
-- **Judge in the same family as the subject.** `gpt-4.1-mini` judges `gpt-4.1-mini` output. Self-preference risk is not neutralised. Mitigated by using the judge on only 3 of 20 tasks; pooled agreement with human labels is 79%, kappa 0.55.
-- **Hermes needs world-writable `installs/`.** Shared runtime; a hostile agent could tamper with it. Documented.
-- **Conservative infra-error attribution.** If a `failed` trial coincides with any gateway error, it is reclassified `infra_error`. Can discard a real agent failure that happened during throttling. With 0 gateway errors in the final runs this had no measurable effect.
+- One container, not one per trial. Isolation is uid-based. Fine for normal model use; someone sharing the kernel and trying to break out is not in scope.
+- Judge is the same family as the subject (`gpt-4.1-mini` on `gpt-4.1-mini`). Used on 3 of 20 tasks. Agreement with human labels: 79%, kappa 0.55.
+- Hermes wants world-writable `installs/`. A hostile agent could mess with it.
+- If a failed/timed-out trial also had a gateway error, it becomes `infra_error`. That can throw away a real fail that happened during throttling. Final runs had 0 gateway errors.
 
 ---
 
-## In scope / out of scope
+## Tasks
 
-**In scope.** Hermes + OpenCode as harnesses; one Azure model (`gpt-4.1-mini`); 20 hand-authored tasks across four grader types; N repeated trials with isolation, budgets, retries, and heartbeats; paired statistics with explicit "within noise" / "insufficient data" verdicts; per-trial trajectory inspection; JSON/CSV export; rule-based failure classification; 206 offline tests.
+The 20 tasks mix code, files, exact answers, a few judge rubrics, and four that actually need skills or memory. That is enough to compare harness settings on one model; it is not a general agent leaderboard.
 
-**Out of scope.** Second provider / open-weight model (shipped as a single-YAML extension point); adversarial sandboxing (per-trial container or VM); distributed scheduling; multi-tenant auth; automated prompt-caching discount accounting; per-trial attribution of judge cost.
+## In / out
 
-## Extension points
+**In.** Hermes + OpenCode; Azure `gpt-4.1-mini`; 20 tasks, four grader types; N repeats; isolation, budgets, retries, heartbeats; paired stats with “within noise” / “not enough data”; traces; JSON/CSV; failure rules; 206 offline tests.
 
-- **Add a model** → `config/models.yaml` + `.env`. Zero code.
-- **Add a harness** → subclass `Harness`, implement `run(ctx)`, register. ~50 lines.
-- **Add a grader type** → one function + registry entry in `worker/graders.py`.
-- **Add a failure category** → one rule in `api/src/failures.ts`; UI renders it automatically.
-- **Add a statistic** → `api/src/stats.ts`; the Compare endpoint composes.
-- **Swap storage** → `api/src/db.ts` is the only consumer of `node:sqlite`.
+**Out.** Second provider / open-weight model (YAML hook is there); per-trial containers; distributed queue; multi-user auth; prompt-cache discount; splitting judge cost onto trials.
+
+## Extension
+
+- **Model** → `config/models.yaml` + `.env`.
+- **Harness** → subclass `Harness`, implement `run(ctx)`, register. ~50 lines.
+- **Grader** → function + registry in `worker/graders.py`.
+- **Failure category** → rule in `api/src/failures.ts`.
+- **Stat** → `api/src/stats.ts`.
+- **Storage** → `api/src/db.ts` is the only `node:sqlite` user.
 
 ---
 
 ## Results
 
-Main experiment: 20 tasks × 3 configs × N = 5 = 290 scored trials, 0 infra errors, $4.36. Raw exports in [`docs/results/`](results/); narrative in [`docs/experiment.md`](experiment.md); screenshots in [`docs/screenshots/`](screenshots/).
+Main run: 20 tasks × 3 configs × N = 5 → 290 scored trials, 0 infra errors, $4.36. Raw files in [`docs/results/`](results/); write-up in [`docs/experiment.md`](experiment.md); screenshots in [`docs/screenshots/`](screenshots/).
 
 | config            | mean score (95% CI)   | notes |
 |-------------------|-----------------------|-------|
 | hermes-plain      | 0.765 [0.585, 0.922]  | baseline |
-| hermes-full       | 0.770 [0.588, 0.930]  | skills + memory on; Δ vs plain = **+0.005 [−0.092, +0.108]** — within noise |
-| opencode-skills   | 0.822 [0.667, 0.956]  | Δ vs hermes-full = **+0.011 [−0.178, +0.211]** — within noise |
+| hermes-full       | 0.770 [0.588, 0.930]  | skills + memory; Δ vs plain **+0.005 [−0.092, +0.108]** — within noise |
+| opencode-skills   | 0.822 [0.667, 0.956]  | Δ vs hermes-full **+0.011 [−0.178, +0.211]** — within noise |
 
-Decisive per-task findings, replicated across two independent runs:
+Repeated across two runs:
 
-- **Memory works when the task requires it.** Task 19: plain 0.00 → full 0.80, CI [+0.40, +1.00]. Trace shows `memory_context → USER.md: port 8081, tabs`; the agent then writes `listen 8081;`.
-- **Harnesses diverge on skill discovery.** Task 18: OpenCode opens the skill in 5/5 trials and passes 4/5; Hermes opens it in 0/5 and passes 0. Same model, same skill files, opposite behaviour.
-- **Aggregate parity hides opposing per-task effects.** Hermes wins CSV (06); OpenCode wins log-counting (11). Each has mechanistic trace evidence.
+- Task 19 (memory): plain 0.00 → full 0.80, CI [+0.40, +1.00]. Trace has `USER.md: port 8081`; agent writes `listen 8081;`.
+- Task 18 (skill): OpenCode opens the skill 5/5, passes 4/5. Hermes opens it 0/5, passes 0. Same model, same files.
+- Aggregate hides opposing tasks. Hermes wins CSV (06); OpenCode wins log-counting (11).
 
-Positive control (`hermes-full` + "check your skills and memory first"): behaviour changes measurably (`capability_unused` 10 → 3), cost rises (+$0.012/trial, +29.6k tokens), scores barely move. The ceiling is the model, not the harness.
-
----
-
-## Known limits (headline — full list in [`docs/limits.md`](limits.md))
-
-- 20 tasks; 11 saturate at 1.00. Aggregate CI resolves effects ≥ ~0.10.
-- One model, one provider. Harness ranking is confounded with model fit.
-- Judge-scored tasks (3 of 20) are noisier than deterministic graders.
-- Task 19 was reworded after observing an initial failure — disclosed.
-- Sandbox is for cooperative agents, not adversarial ones.
+Nudge control (`hermes-full` + “check skills and memory first”): `capability_unused` 10 → 3, cost +$0.012/trial, scores barely move.
 
 ---
 
-## How to verify
+## Limits (full list: [`docs/limits.md`](limits.md))
+
+- 20 tasks; 11 sit at 1.00. Aggregate CI only really sees effects ≥ ~0.10.
+- One model, one provider.
+- Judge tasks (3/20) are noisier than unit tests.
+- Task 19 prompt was reworded after an early fail — called out in the experiment notes.
+- Sandbox is not for adversarial agents.
+
+---
+
+## Run it
 
 ```bash
-cp .env.example .env         # Azure credentials
-docker compose up --build    # UI + API on :3000 (override with API_PORT)
-# Configs → create → Experiments → Start → open to see Compare + trajectories
+cp .env.example .env
+docker compose up --build    # UI + API on :3000
 ```
 
-- Tests: `cd api && npm test` (55); `cd worker && pytest tests -q` (151); `python tasks/validate.py` (20/20 green).
-- Reference reading, in order: [`README.md`](../README.md) → this file → [`docs/design.md`](design.md) → [`docs/experiment.md`](experiment.md) → [`docs/limits.md`](limits.md) → [`docs/cost.md`](cost.md).
-- Raw exports: [`docs/results/`](results/). Screenshots: [`docs/screenshots/`](screenshots/).
+- Tests: `cd api && npm test` (55); `cd worker && pytest tests -q` (151); `python tasks/validate.py` (20/20).
+- Order to read: [`README.md`](../README.md) → this file → [`docs/design.md`](design.md) → [`docs/experiment.md`](experiment.md) → [`docs/limits.md`](limits.md) → [`docs/cost.md`](cost.md).

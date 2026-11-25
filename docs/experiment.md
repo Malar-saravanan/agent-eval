@@ -23,6 +23,7 @@ Note: two features change together. They are not separable within this experimen
 ## Setup
 
 20 tasks × N=5 × 3 configurations = 300 trials. 10 trials are `not_applicable` (OpenCode has no memory; tasks 19 and 20).
+The suite mixes code, files, exact match, and judge tasks, plus four that require skills or memory, so H1 is a settings comparison and H2 is a harness comparison on the same work — not a random prompt bag.
 Concurrency 4. Each trial: fresh workdir, fresh harness home, exclusive unprivileged uid, scrubbed environment, 30 steps / 300k tokens enforced in the gateway.
 Statistics: paired hierarchical bootstrap on task means (2000 resamples, seeded) plus McNemar's exact test on per-task pass/fail. See `design.md`.
 

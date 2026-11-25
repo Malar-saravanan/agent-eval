@@ -1,7 +1,7 @@
 """Model gateway: forwards OpenAI-style chat requests to Azure and meters usage per trial.
 
-Harnesses talk to this as a plain OpenAI-compatible endpoint, using the trial id as the API key,
-so token/latency capture is identical no matter which harness is running.
+Harnesses talk to this as a plain OpenAI-compatible endpoint, using a per-trial bearer secret
+as the API key, so token/latency capture is identical no matter which harness is running.
 """
 import json
 import os
