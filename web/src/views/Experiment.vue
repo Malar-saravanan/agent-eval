@@ -11,8 +11,9 @@ const trials = ref<TrialRow[]>([])
 const cmp = ref<Comparison>()
 const failures = ref<Failures>()
 const error = ref('')
-const a = ref('')
-const b = ref('')
+const qs = new URLSearchParams(location.hash.split('?')[1] ?? '')
+const a = ref(qs.get('a') ?? '')
+const b = ref(qs.get('b') ?? '')
 const fCfg = ref('')
 const fTask = ref('')
 const fStatus = ref('')
@@ -31,6 +32,9 @@ async function refresh() {
   try {
     exp.value = await api.experiment(props.id)
     if (!a.value && !b.value && exp.value.config_ids.length >= 2) [a.value, b.value] = exp.value.config_ids
+    // once chosen, sync A/B into the URL so the comparison is a shareable (and screenshottable) link
+    const want = `#/experiments/${props.id}?a=${encodeURIComponent(a.value)}&b=${encodeURIComponent(b.value)}`
+    if (a.value && b.value && location.hash !== want) history.replaceState(null, '', want)
     ;[summary.value, trials.value, failures.value] = await Promise.all([api.summary(props.id), api.trials(props.id), api.failures(props.id)])
     await loadCompare()   // the verdict must follow the data while the experiment is still running
     if (exp.value.status === 'done') stop()
@@ -42,7 +46,11 @@ onMounted(async () => {
 })
 onUnmounted(() => { disposed = true; stop() })
 
-watch([a, b], () => { cmp.value = undefined; loadCompare() })
+watch([a, b], () => {
+  cmp.value = undefined
+  if (a.value && b.value) history.replaceState(null, '', `#/experiments/${props.id}?a=${encodeURIComponent(a.value)}&b=${encodeURIComponent(b.value)}`)
+  loadCompare()
+})
 
 const pct = computed(() => (exp.value && exp.value.progress.total ? (100 * exp.value.progress.done) / exp.value.progress.total : 0))
 const ci = (s: { ci: [number, number] }, d = 3) => `[${fmt(s.ci[0], d)}, ${fmt(s.ci[1], d)}]`
