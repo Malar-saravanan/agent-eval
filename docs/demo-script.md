@@ -1,19 +1,21 @@
-# Demo video script (target 8-9 min, hard limit 10)
+# Demo video script
 
-Pre-flight: `docker compose up -d`, wait until the worker is healthy (~1 min after boot for the warm-up), have the finished MAIN experiment open in a second tab (a full 300-trial run takes ~25 min, so do **not** run it live).
+Target 8–9 minutes, hard limit 10.
 
-| Time | Show | Say |
-|---|---|---|
-| 0:00 | Terminal: `docker compose up`, then the UI | "One command. A NestJS control plane, a Python worker that runs the harnesses, and this Vue UI." |
-| 0:30 | `docs/design.md` architecture diagram | "Harnesses and models are adapters. Both harnesses talk to one metering gateway, so tokens, cost and latency are measured the same way. Budgets and the sandbox live there too." |
-| 1:30 | **Configs** page | "A config is harness x model x settings: skills, memory, temperature, step and token budgets, nudge. Configs are immutable and hashed: saving a change creates `name@v2`." Create a new config live (e.g. `hermes-memory-on`, memory + skills). |
-| 2:30 | **Experiments** page: start a small one (2 configs, 3 tasks, N=2) | "Every task runs under every config, N times, each in a fresh workdir, home and unprivileged user. Infra failures are retried and never scored as a failure." Watch progress while talking. |
-| 3:30 | Open the finished MAIN experiment: **Summary** | "Mean score with a bootstrap CI per config, plus cost, latency, tokens. Note 0 infra errors." |
-| 4:15 | **Compare**: hermes-plain vs hermes-full | "Paired by task, hierarchical bootstrap. The CI spans zero, so the platform says *within noise*: it will not call a winner I can't support." Point at per-task deltas and the forest plot. |
-| 5:15 | **Compare**: hermes-full vs opencode-skills | "Overall also noise, but per-task deltas show real, opposite effects: Hermes wins CSV, OpenCode wins the log count and the skill task. An aggregate alone would hide that." |
-| 6:00 | **Failure analysis** table | "Failures are grouped by cause: `capability_unused`, `hallucinated_tool_args`, `wrong_answer`... so a regression points at a reason." |
-| 6:45 | Click a **failed trial** (task 18 or 11) | "Full trajectory: messages, tool calls and results, memory reads and writes, skill use, grader reasoning, final score. Here Hermes never opened the skill, so the lint rules were never applied." Show the meta line (harness version, resolved model, task hash, budgets). |
-| 8:00 | Positive-control experiment (nudge) | "To check the platform *can* see a feature helping, I added a nudge config: agents then consult skills, `capability_unused` drops, yet scores barely move, so the limit is the model, not the harness or the tasks." |
-| 8:45 | `docs/limits.md`, `docs/cost.md` headings | "Known limits and cost per experiment: ~$4.6 for 300 trials." Stop. |
+**Pre-flight.** `docker compose up -d`. Wait ~1 minute for the worker to warm up. Open the finished MAIN experiment in a second tab — do **not** run a 300-trial experiment live (~25 min).
 
-Tips: keep the browser at 1280px wide, dark mode off, zoom 110%. Pre-load the trial page. Do not show `.env`.
+| Time | Show | Narration |
+|------|------|-----------|
+| 0:00 | Terminal `docker compose up`, then the UI | "One command. NestJS control plane, a Python worker that runs the harnesses, and a Vue UI." |
+| 0:30 | `docs/design.md` architecture diagram | "Harnesses and models are adapters. Both harnesses reach Azure through one metering gateway — that is where budgets, authentication, and cost accounting live." |
+| 1:30 | Configs page; create a config live | "A config is harness × model × settings — skills, memory, temperature, step and token budgets, nudge. Configs are content-hashed and immutable; saving a change produces `name@v2`." |
+| 2:30 | Experiments page; start a small run (2 configs, 3 tasks, N=2) | "Every task runs under every config, N times, each in a fresh workdir and home as an unprivileged user. Infrastructure failures are retried and excluded from scoring." |
+| 3:30 | Open the finished MAIN experiment → Summary | "Mean score with bootstrap CI per config, plus cost, latency, and tokens. Zero infra errors across 300 trials." |
+| 4:15 | Compare — hermes-plain vs hermes-full | "Paired by task, hierarchical bootstrap. The CI spans zero; the platform reports *within noise* and will not call a winner it cannot support." Point at per-task deltas and the forest plot. |
+| 5:15 | Compare — hermes-full vs opencode-skills | "Aggregate also within noise, but per-task deltas show real, opposing effects: Hermes wins CSV, OpenCode wins log counting and the skill task. The aggregate alone would hide this." |
+| 6:00 | Failure analysis table | "Failures are grouped by cause — `capability_unused`, `hallucinated_tool_args`, `wrong_answer`. A regression points straight at a reason." |
+| 6:45 | Click into a failed trial (task 18 or 11) | "Full trajectory — messages, tool calls, memory reads and writes, skill use, grader reasoning, final score. Hermes never opens the skill here; the lint rules go unapplied." Mention the meta line: harness version, resolved model, task hash, budgets. |
+| 8:00 | The nudge control | "A positive control: with one extra sentence the agent consults its skills, `capability_unused` drops — but scores barely move. The limit is the model, not the harness or the suite." |
+| 8:45 | `docs/limits.md`, `docs/cost.md` | "Known limits and roughly $4.6 per 300-trial experiment. End." |
+
+**Technical.** Browser at 1280px, dark mode off, zoom 110%. Pre-load the trial page. Do not show `.env`.

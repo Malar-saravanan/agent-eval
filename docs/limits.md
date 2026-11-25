@@ -1,24 +1,52 @@
-# Known limits: where not to trust these conclusions
+# Known limits
 
-1. **Small task set (20).** The statistical unit is the task, so the CI on a config difference is driven by 20 tasks, not by trials. Adding trials narrows within-task noise but cannot fix a small, hand-written task set. Only large effects (roughly ≥0.15-0.2 in mean score) are detectable; "within noise" means *not detected*, not *no difference*.
-2. **Author-written tasks, one author.** Task difficulty, rubric wording and the skill/memory tasks reflect one person's choices. No claim about general agent ability follows from them. Tasks 17-20 are deliberately built so skills/memory are *necessary*; that makes them sensitive to the feature by construction, so effects there are upper bounds of what a config's skill/memory handling is worth.
-3. **Single model.** The experiment uses one model (`gpt-4.1-mini`), so harness differences are confounded with how well that model suits each harness's prompting and tool schema. Another model could reverse the ranking.
-4. **Judge bias and weak criteria.** The judge is the same model family as the agent under test (self-preference risk). Measured agreement with human labels is moderate (pooled 79%, kappa 0.55, see `judge-validation.md`); it is poor at counting/whitespace criteria (task 14 bullet count, task 15 blank line, kappa as low as 0). Only 3 of 20 tasks are judge-scored; treat their scores as noisy. Deterministic graders carry the headline numbers.
-5. **Judge labels by the system author.** The 30 human labels were written by the same party that wrote the rubrics and the tasks, so agreement overstates independent validity.
-6. **Contamination.** Tasks are small, classic exercises (LRU cache, Roman numerals, pagination); the model has almost certainly seen near-identical problems. Scores on tasks 01-07 measure recall of standard solutions at least as much as agentic ability.
-7. **Harness-specific quirks.** Hermes runs with its default system prompt and toolsets (~8-16k input tokens per call), OpenCode with its own; token cost differences are therefore largely prompt overhead, not "efficiency". OpenCode has no step limit flag (budget enforced by timeout only) and no persistent memory (tasks 19-20 are N/A, so its aggregate is over 18 tasks; Hermes configs cover 20). Compare aggregates across harnesses only on shared tasks (the paired test already does).
-8. **Skill/memory semantics are ours.** "Memory on" = a seed session that tells the agent a fact, with state carried into the task; "off" = no seed. Because the fact appears nowhere else, the off-config *cannot* pass tasks 19-20; the interesting quantity is whether the on-config actually retrieves it.
-9. **Isolation is per-trial directory + home in one worker container.** There is no network sandbox and the agent runs with auto-approval inside the container; fine for these tasks, not a security boundary.
-10. **Non-determinism and API drift.** Temperature is fixed at 0.2 but the deployment is not seeded; Azure model snapshots can change. Results are reproducible in *distribution*, not per trial.
-11. **Cost is approximate.** Prices come from public trackers; cached-input discounts (Hermes shows large cache reads) are not applied, so reported cost is an upper bound.
-12. **Ceiling effects.** 11 of 20 tasks scored 1.00 on every config in the main experiment (and 17, 20 are 0.00 for every config), so the suite discriminates on only ~5-6 tasks. "Within noise" on the aggregate is partly a consequence of that, not just of there being no difference.
-13. **Features unused != features useless.** Skills had no effect on gpt-4.1-mini because it never opened them unprompted; a nudge (one extra sentence) halved the 'skills unused' failures but did not change scores, so the skill tasks may simply be hard for this model. Memory did help (task 19), but only because its prompt cues "our project's conventions"; task 20 has no such cue and stays at 0. One model cannot separate "too hard a task" from "weak skill mechanism".
-18. **A task was reworded after seeing it fail** (task 19, from "standard port" to "our project's port"); see `experiment.md`. This is a form of tuning on the evaluation and affects only that task.
-14. **Cross-harness comparison bundles many differences** (system prompt, tool set, skill discovery, file-write semantics, token overhead). It identifies *that* bundles differ on specific tasks, not *which component* causes it.
-15. **Sandbox is not adversary-proof.** Agents run as unprivileged per-trial users with a scrubbed environment; they cannot read hidden tests, solutions, the API key or the `/trial` secret, cannot use the gateway without their own per-trial secret, and cannot make the pytest runner pass by planting files in their directory. But they share one kernel and network namespace, Hermes requires a world-writable shared runtime dir (`installs/`) that a hostile agent could tamper with, and solution code runs inside the pytest process (a deliberately malicious solution could print a fake pytest summary). Fine for cooperative models on these tasks; use per-trial containers/VMs for untrusted agents.
-16. **One model, one provider.** Every result here is on a single Azure deployment. The brief asks for at least two models from different providers (or one open-weight model); adding one is a `config/models.yaml` entry plus a deployment name, but no second-model run has been done.
-17. **Judge metering gap.** Judge calls are metered by the gateway but not attributed to the trial they graded, so per-trial cost excludes grading cost (small: ~$0.001 per judged trial).
-19. **"Skills off" is not "no skills".** The Hermes template ships bundled default skills (apple-notes, etc.) in every config; "off" means the task's own skill is not installed. Likewise "memory off" means no seed session, not that the memory tool is disabled.
-20. **Seed that never saves.** If the memory seed fails to persist after 3 attempts, the trial is still graded (not remembering is behaviour being measured); the trace carries a `memory_seed_unsaved` error event. Memory-ON trials therefore include the agent's reliability at saving.
-21. **LLM judge hardening is partial.** The agent's output is delimited as untrusted and verdict shapes are validated, but prompt injection into a model judge cannot be ruled out; judge usage is not charged to the trial.
-22. **Conservative error attribution.** Reclassifying a failed trial as `infra_error` when the gateway returned any error is conservative (it may discard a failure that was the agent's fault, after a retry), and retries slightly favour trials that experienced upstream trouble. With 0 gateway errors in the final runs this had no effect on the reported results.
+Where not to trust these conclusions.
+
+## Statistical power
+
+- **Task count (20).** The statistical unit is the task. CI width on an aggregate difference is driven by 20 tasks, not by trials. Aggregate effects below ~0.10–0.15 are not detectable. "Within noise" means *not detected*, not *no difference*.
+- **Ceiling and floor effects.** 11 of 20 tasks score 1.00 on every configuration; two more (17, 20) score 0.00 on every configuration. The suite discriminates on roughly 7 tasks. "Within noise" at the aggregate is partly a consequence of this.
+- **No multiplicity correction on per-task flags.** With 20 per-task intervals at 95%, approximately one spurious "significant" flag is expected per comparison. Replication confirms this (see `experiment.md` → Replication). Per-task flags are leads for trace inspection, not findings.
+
+## Task design
+
+- **Author-written suite, single author.** Difficulty, rubric wording, and the skill/memory task design reflect one person's choices. No claim about general agent ability follows.
+- **Discriminating tasks are built to be sensitive.** Tasks 17–20 are constructed so that skills or memory are *necessary*. Effects observed there are upper bounds on what a configuration's handling of those features is worth.
+- **Contamination.** Tasks 01–07 are classic exercises (LRU cache, Roman numerals, pagination); near-identical problems appear in training data. Those scores measure recall of standard solutions as much as agentic ability.
+- **Task 19 was reworded after an observed failure** ("standard port" → "our project's port"). This is a form of tuning on the evaluation; see `experiment.md`. It affects only task 19.
+
+## Single model
+
+- Every result is from one Azure deployment (`gpt-4.1-mini`). Harness differences are confounded with how that model suits each harness's prompting and tool schema; another model could reverse the ranking.
+- **The brief asks for two models or one open-weight model.** Adding a model is a single YAML entry plus an env var; no run has been performed with a second model.
+- **Non-determinism and API drift.** Temperature is fixed at 0.2 but the deployment is not seeded; Azure snapshots can roll. Results are reproducible in distribution, not per trial.
+- **Feature use ≠ feature value on this model.** Skills had no measurable effect because the model did not open them unprompted. A nudge halved `capability_unused` failures without changing scores, suggesting the skill tasks may simply be hard for this model. One model cannot separate "too hard a task" from "a weak skill mechanism".
+
+## Judge
+
+- The judge is in the same model family as the subject (`gpt-4.1-mini`). Self-preference risk is not neutralised.
+- Pooled agreement with human labels is 79%, Cohen's kappa 0.55 (see `judge-validation.md`). Agreement is weak on counting (task 14 bullet count) and whitespace (task 15 blank line, kappa 0.00). Deterministic graders carry the headline numbers; judge scores should be treated as noisier.
+- Human labels were produced by the same party that wrote the rubrics and tasks. Agreement overstates independent validity.
+- Prompt-injection into the judge is mitigated by delimiting the agent's output as untrusted, but not eliminated.
+- Judge token usage is metered but not attributed to the trial it graded. Per-trial cost excludes grading cost (~$0.001 per judged trial).
+
+## Harness comparison
+
+- Comparing harnesses on the same model bundles many differences (system prompt, tool set, skill discovery, file-write semantics, token overhead). The comparison identifies **that** the bundles differ on specific tasks; it does not isolate **which** component is responsible.
+- "Skills off" is not "no skills" — the Hermes template ships bundled default skills in every configuration; "off" means the task's own skill is not installed. Likewise "memory off" means no seed session, not that the memory tool is disabled.
+- Token-cost differences between harnesses are largely prompt overhead (~8–16k tokens of system prompt and tools per call), not "efficiency".
+- OpenCode has no persistent memory: tasks 19–20 resolve to `not_applicable` and its aggregate is over 18 tasks (Hermes covers 20). The paired test handles this correctly; cross-harness aggregates should always be read as "shared tasks only".
+
+## Sandbox
+
+- Agents run as unprivileged per-trial users with a scrubbed environment. They cannot read hidden tests, solutions, the API key, or the `/trial` secret; cannot use the gateway without their own per-trial secret; cannot cause a planted `conftest.py` or `pytest.ini` to make failing tests pass.
+- They share one kernel and one network namespace with the worker.
+- Hermes requires a world-writable shared runtime directory (`installs/`); a hostile agent could tamper with it and affect later trials.
+- Solution code runs inside the pytest process. A deliberately malicious solution could print a fake pytest summary. Mitigation is forthcoming (parse `junit-xml` or a plugin signal).
+- Appropriate for cooperative models on this suite. Untrusted agents warrant per-trial containers or VMs.
+
+## Measurement
+
+- Prices are public-tracker list rates. Cached-input discounts are not modelled. Reported cost is an upper bound.
+- Infra-aware reclassification is conservative: a trial that would have been `failed` or `timeout` is reclassified `infra_error` if any gateway error occurred. This can discard an agent failure that happened to coincide with throttling; it also means retries slightly favour trials with upstream trouble. With 0 gateway errors in the final runs, this had no effect on the reported results.
+- If a memory seed fails to persist after 3 attempts, the trial is still graded. Memory-on numbers therefore include the agent's reliability at saving its own memory.

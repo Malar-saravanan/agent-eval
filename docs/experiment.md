@@ -1,83 +1,138 @@
-# Experiment: do skills + memory help Hermes? (plus a Hermes vs OpenCode comparison)
+# Experiment
 
-Main experiment `e_6a98d06c` (300 trials), nudge control `e_e3a652f2` (70 trials). Export: `GET /api/experiments/<id>/export.json|csv`. Model: Azure `gpt-4.1-mini` for every config, temperature 0.2. **370 trials, 0 infra errors, 0 grader errors, 0 timeouts**, spend $5.95 ($4.36 + $1.59). Both ran on the final, reviewed code.
+Two paired comparisons on a 20-task suite, Azure `gpt-4.1-mini` as the single model, N = 5 trials per cell.
 
-## Hypothesis (stated before the first run)
+- Main (`e_6a98d06c`): 300 trials over three configurations.
+- Nudge control (`e_e3a652f2`): 70 trials over two configurations on seven tasks.
+- 370 trials total. 0 infrastructure errors, 0 grader errors, 0 timeouts. Spend: $5.95 ($4.36 + $1.59).
 
-**H1 (primary, single axis):** same harness (Hermes), same model. Turning **skills + memory ON** improves the four tasks that need them (17-20) and is neutral on the other 16.
-A = `hermes-plain@v1` (skills off, memory off), B = `hermes-full@v1` (skills on, memory on). Strictly two features change together; they are not separable here.
+Both runs were executed on the final reviewed code. Exports: `GET /api/experiments/<id>/export.{json,csv}`.
 
-**H2 (exploratory, many axes differ):** Hermes vs OpenCode, same model. Different prompts, tools and skill mechanisms: a difference means "the harness bundles differ", not "component X".
+---
+
+## Hypotheses (pre-registered)
+
+**H1 (primary, single axis).** Same harness, same model. Turning **skills + memory on** improves the four tasks that require them (17–20) and is neutral on the other 16.
+A = `hermes-plain@v1` (skills off, memory off); B = `hermes-full@v1` (skills on, memory on).
+Note: two features change together. They are not separable within this experiment.
+
+**H2 (exploratory, multi-axis).** Hermes vs OpenCode on the same model. Different system prompts, tool schemas, and skill mechanisms — a difference indicates the **harness bundles** differ, not any one component.
+
+---
 
 ## Setup
 
-20 tasks x N=5 x 3 configs = 300 trials (10 are N/A: OpenCode has no memory, tasks 19-20). Concurrency 4. Each trial: fresh workdir and harness home, its own unprivileged uid, scrubbed environment, gateway budget 30 steps / 300k tokens. Stats: paired hierarchical bootstrap on task means (2000 resamples, seeded) plus McNemar on per-task pass/fail (`design.md`).
+20 tasks × N=5 × 3 configurations = 300 trials. 10 trials are `not_applicable` (OpenCode has no memory; tasks 19 and 20).
+Concurrency 4. Each trial: fresh workdir, fresh harness home, exclusive unprivileged uid, scrubbed environment, 30 steps / 300k tokens enforced in the gateway.
+Statistics: paired hierarchical bootstrap on task means (2000 resamples, seeded) plus McNemar's exact test on per-task pass/fail. See `design.md`.
 
-## Results
+---
 
-| config | scored | mean score (95% CI) | cost / trial | latency | tokens / trial |
-|---|---|---|---|---|---|
-| hermes-plain | 100 | 0.765 [0.585, 0.922] | $0.0143 | 17.7 s | 33.9k |
-| hermes-full | 100 | 0.770 [0.588, 0.930] | $0.0147 | 17.3 s | 35.7k |
-| opencode-skills | 90 | 0.822 [0.667, 0.956] | $0.0162 | 15.4 s | 38.9k |
+## Headline
 
-**H1, plain -> full (20 paired tasks): diff +0.005, CI [-0.092, +0.108] -> within noise** (McNemar a-only 1, b-only 1, p = 1); cost +$0.0003 (CI spans 0). Overall, skills + memory did not change the score within the achievable precision (about +-0.10).
+| config            | scored | mean score (95% CI)    | cost / trial | latency | tokens / trial |
+|-------------------|--------|------------------------|--------------|---------|----------------|
+| hermes-plain      | 100    | 0.765 [0.585, 0.922]   | $0.0143      | 17.7 s  | 33.9k          |
+| hermes-full       | 100    | 0.770 [0.588, 0.930]   | $0.0147      | 17.3 s  | 35.7k          |
+| opencode-skills   | 90     | 0.822 [0.667, 0.956]   | $0.0162      | 15.4 s  | 38.9k          |
 
-Per task (only these moved):
+---
 
-| task | plain | full | reading |
-|---|---|---|---|
-| **19-memory-server-conf** | 0.00 | **0.80** (CI [+0.40, +1.00]) | real effect, mechanism visible in the trace (below) |
-| 11-count-errors | 0.60 | 0.00 (flagged SIG) | **spurious**: counting log lines depends on neither skills nor memory; see "Stability" |
-| 14-summarize-readme | 0.70 | 0.60 | judge-scored, noise |
-| 17-changelog, 18-lint (skills), 20-memory-util | 0.00 | 0.00 | the model never opened the skills (0 of 10 trials); task 20 has no cue that a convention exists |
+## H1 — skills + memory
 
-**H2, hermes-full -> opencode-skills (18 paired tasks, memory tasks excluded): diff +0.011, CI [-0.178, +0.211] -> within noise** (a-only 1, b-only 2, p = 1). Opposing per-task effects cancel:
+**plain → full, 20 paired tasks: Δ = +0.005, 95% CI [−0.092, +0.108] — within noise.**
+McNemar: a-only 1, b-only 1, p = 1.00. Cost delta +$0.0003/trial (CI spans 0).
 
-| task | hermes-full | opencode | what the traces show |
-|---|---|---|---|
-| 06-csv-group-sum | 1.00 | **0.00** (SIG) | OpenCode overwrote the provided `sales.csv` with invented data without reading it (5/5) |
-| 11-count-errors | 0.00 | **1.00** (SIG) | Hermes counted with `grep '...(10\|11):..' \| wc -l` (also counts 11:01-11:59, answers 8 not 6); OpenCode read the log and bounded timestamps exactly |
-| 18-lint-rules-skill | 0.00 | **0.80** (SIG) | **OpenCode opened the skill in 5 of 5 trials and passed 4 of 5; every pass used the skill.** Hermes opened it in 0 of 5 and passed 0 |
+Aggregate effect is below the precision floor (~±0.10). Per task, only four move:
 
-Skill use is the whole story on task 18: same model, same skill files, opposite behaviour. The harness's tool set and prompt decide whether the skill is discovered. On task 17 neither harness ever opened its skill (0 of 10 trials) and none passed.
+| task                        | plain | full | reading |
+|-----------------------------|-------|------|---------|
+| **19-memory-server-conf**   | 0.00  | **0.80** (CI [+0.40, +1.00]) | real effect; mechanism visible in the trace |
+| 11-count-errors             | 0.60  | 0.00 (flagged significant)   | spurious — neither skills nor memory can affect log-counting; see Replication |
+| 14-summarize-readme         | 0.70  | 0.60                         | judge-scored noise |
+| 17-changelog, 18-lint, 20-util | 0.00 | 0.00                      | skills never opened (0 of 10 trials on 17 and 18); 20 carries no cue a convention exists |
 
-## Stability: two independent replicates of the same experiment
+**Finding.** Memory produces a decisive, mechanistically explained effect on the single task where the remembered fact is required (19). Skills produce no measurable effect on `gpt-4.1-mini` because the model does not consult them unprompted. The aggregate signal hides a +1.00 effect on one task and 0 on three — per-task deltas are therefore essential to any interpretation.
 
-The experiment was run twice on materially different builds of the platform (R1 before the independent code review, R2 final; R1 numbers are those recorded at the time, its raw rows were cleared when R2 started). Same configs, tasks and N.
+---
 
-| quantity | R1 | R2 (above) | stable? |
-|---|---|---|---|
-| mean score plain / full / opencode | 0.748 / 0.785 / 0.817 | 0.765 / 0.770 / 0.822 | yes (+-0.03) |
-| H1 diff (full - plain) | +0.037 [-0.050, +0.150] | +0.005 [-0.092, +0.108] | yes: within noise both times |
-| H2 diff (opencode - full) | 0.000 [-0.164, +0.147] | +0.011 [-0.178, +0.211] | yes: within noise both times |
-| task 19 plain -> full | 0.00 -> 1.00 | 0.00 -> 0.80 | **yes, large and replicated** |
-| task 06 OpenCode | 0.00 | 0.00 | yes |
-| task 11 OpenCode vs Hermes | 1.00 vs 0.20 | 1.00 vs 0.00 | yes |
-| task 18 OpenCode vs Hermes | 0.20 vs 0.00 | 0.80 vs 0.00 | direction yes, size no (4x) |
-| task 11 plain vs full | 0.40 vs 0.20 (n.s.) | 0.60 vs 0.00 (SIG) | **no: noise** |
-| task 14 plain vs full | 0.75 vs 0.50 (SIG) | 0.70 vs 0.60 (n.s.) | **no: judge noise** |
+## H2 — Hermes vs OpenCode
 
-Lessons that drive how to read this platform: (1) aggregate scores and verdicts replicate; (2) large mechanistic per-task effects replicate (19, 06, 11 Hermes-vs-OpenCode, skill use on 18); (3) **single-task "significant" flags between configs that differ in nothing relevant do not replicate** (11 and 14 plain-vs-full), exactly what 20 uncorrected per-task intervals at 95% plus N=5 predict. So per-task flags are leads to inspect in the trace, not findings, and the aggregate CI is the verdict.
+**hermes-full → opencode-skills, 18 paired tasks (memory tasks excluded): Δ = +0.011, CI [−0.178, +0.211] — within noise.**
+McNemar: a-only 1, b-only 2, p = 1.00. Opposing per-task effects cancel.
 
-## Positive control: nudge (`hermes-nudge` = `hermes-full` + one sentence telling the agent to check its skills and memory first), 7 tasks x 5 trials
+| task                     | hermes-full | opencode | trace evidence |
+|--------------------------|-------------|----------|----------------|
+| 06-csv-group-sum         | 1.00        | **0.00** (sig) | OpenCode overwrote the provided `sales.csv` with invented data without reading it (5 of 5) |
+| 11-count-errors          | 0.00        | **1.00** (sig) | Hermes counted with `grep '...(10\|11):..' \| wc -l` (also matches 11:01–11:59; answer 8, expected 6); OpenCode read the log and bounded timestamps exactly |
+| 18-lint-rules-skill      | 0.00        | **0.80** (sig) | **OpenCode opened the skill in 5 of 5 trials and passed 4 of 5; every pass used the skill.** Hermes opened it in 0 of 5 and passed 0 |
 
-score 0.457 -> 0.629, diff +0.171, CI [+0.000, +0.393] -> inconclusive at the boundary; cost +$0.012/trial (CI excludes 0), +29.6k tokens, +5.3 s. `capability_unused` failures fall from 10 to 3: the nudge changes behaviour. Task 17 rose 0.00 -> 0.60 (flagged) in this run. I ran this control four times on slightly different builds during development; the diff was +0.079, +0.150, +0.029 and +0.171: always positive, never clearly excluding 0, and task 17 stayed 0.00 in three of the four runs: **suggestive, not established** with 7 tasks. The control still earns its keep: it shows the platform detects behaviour change (skill use) and prices it, and that effects on skill tasks are real but unstable for this model.
+**Finding.** Same model, same skill files, opposite outcomes on 18. The harness's tool set and system prompt decide whether a skill is discovered. Neither harness ever opened its skill on task 17 (0 of 10); neither passed.
+
+---
+
+## Replication
+
+The main experiment was executed twice on materially different builds (R1 before the independent review, R2 above). Same configs, tasks, and N.
+
+| quantity                         | R1                        | R2 (final)                | stable?                    |
+|----------------------------------|---------------------------|---------------------------|----------------------------|
+| mean score plain / full / opencode | 0.748 / 0.785 / 0.817  | 0.765 / 0.770 / 0.822     | yes, within ±0.03          |
+| H1 Δ (full − plain)              | +0.037 [−0.050, +0.150]   | +0.005 [−0.092, +0.108]   | yes — within noise both times |
+| H2 Δ (opencode − full)           |  0.000 [−0.164, +0.147]   | +0.011 [−0.178, +0.211]   | yes — within noise both times |
+| task 19 plain → full             | 0.00 → 1.00               | 0.00 → 0.80               | **yes, large and replicated** |
+| task 06 OpenCode                 | 0.00                      | 0.00                      | yes                        |
+| task 11 OpenCode vs Hermes       | 1.00 vs 0.20              | 1.00 vs 0.00              | yes                        |
+| task 18 OpenCode vs Hermes       | 0.20 vs 0.00              | 0.80 vs 0.00              | direction yes, magnitude no |
+| task 11 plain vs full            | 0.40 vs 0.20 (n.s.)       | 0.60 vs 0.00 (sig)        | **no — flag noise**        |
+| task 14 plain vs full            | 0.75 vs 0.50 (sig)        | 0.70 vs 0.60 (n.s.)       | **no — judge noise**       |
+
+**How to read this platform.** Aggregate verdicts replicate. Large mechanistic per-task effects replicate. Isolated "significant" per-task flags between configurations that differ in nothing causally relevant do not — exactly what 20 uncorrected intervals at 95% plus N = 5 predict. Treat per-task flags as leads to inspect in the trace; the aggregate CI is the verdict.
+
+---
+
+## Positive control — nudge
+
+`hermes-nudge` = `hermes-full` with one sentence prepended to the prompt directing the agent to check its skills and memory first. Seven tasks × 5 trials.
+
+- Score: 0.457 → 0.629. Δ = +0.171, CI [+0.000, +0.393]. Verdict at the boundary.
+- Cost: +$0.012/trial (CI excludes 0). Tokens: +29.6k. Latency: +5.3 s.
+- `capability_unused` failures fall from 10 to 3 — behaviour changes measurably.
+- Task 17 rose 0.00 → 0.60 (flagged) in this run. Across four control runs during development the Δ was +0.079, +0.150, +0.029, +0.171: always positive, never clearly excluding 0; task 17 remained 0.00 in three of the four.
+
+**Reading.** The control earns its keep: the platform detects behaviour change, prices it, and shows that skill-task outcomes are real but unstable for this model. The nudge effect is suggestive, not established at N = 5 across 7 tasks.
+
+---
 
 ## Inspected trajectories
 
-1. **Task 19, hermes-full (passes 4 of 5; plain 0 of 5).** Seed session: `memory(add "API port is 8081. Indentation style is tabs.")` saved to USER.md. Task session: trace starts with `memory_context -> USER.md: API port is 8081...`; the agent writes `listen 8081;` with tabs. hermes-plain never sees the fact and searches for a config that does not exist.
-2. **Task 18, OpenCode vs Hermes (4/5 vs 0/5).** OpenCode globs and reads `.opencode/skills/lint-rules/`, then edits to satisfy the three project rules. Hermes reads `app.py`, applies generic cleanups, never opens its skill.
-3. **Task 06, OpenCode (0/5).** `write agg.py`, then `write sales.csv` with invented rows over the provided file, runs on its own data, declares success. Hermes (5/5) did not do this: a harness-level read-before-write difference, not a model limit.
+1. **Task 19, hermes-full (4 of 5 pass; plain 0 of 5).** Seed session writes `USER.md` via `memory(add "API port is 8081. Indentation style is tabs.")`. The task session's trace opens with `memory_context → USER.md: ...`, and the agent writes `listen 8081;` with tab indentation. `hermes-plain` never sees the fact and searches for a configuration file that does not exist.
 
-## Methodological notes and disclosures
+2. **Task 18, OpenCode vs Hermes (4 of 5 vs 0 of 5).** OpenCode globs `.opencode/skills/lint-rules/`, reads the rule file, and edits to satisfy the three constraints. Hermes reads `app.py`, applies generic refactors, never opens its skill.
 
-- **Task 19's prompt was reworded after I saw it fail.** Original: "use the *standard* port and indentation"; with memory visible the model still wrote port 80. Now: "our project's port and indentation conventions" (no fact revealed). That is tuning on the evaluation; it affects only task 19, and the 0 -> 0.80 depends on that cue. Task 20 deliberately has no such cue and stays at 0 for every config.
-- **Platform bugs found and fixed by checking surprising numbers (earlier runs discarded):** leaked Hermes daemons exhausting memory (fake "OpenCode 0.36 vs Hermes 0.83"); pytest's `tmp_path` crashing under per-trial users (task 06 showed 0.00 for Hermes); then an independent code review found a grader-hijack, an open `/trial`, an unauthenticated gateway and failure misclassification. All fixed with regression tests; the results above are from the fixed code. About $16 of runs were discarded along the way (`cost.md`).
-- **Integrity audit** (earlier full run): 0 of 1,124 agent tool calls touched hidden tests, solutions, the key or other trials.
+3. **Task 06, OpenCode (0 of 5).** OpenCode writes `agg.py`, then overwrites the provided `sales.csv` with invented rows, runs the script against its own data, and declares success. Hermes (5 of 5) does not do this — a harness-level read-before-write difference, not a model limitation.
 
-## What I would conclude, and not
+---
 
-- Supported: memory helps Hermes a lot when the task makes the remembered fact relevant (19, replicated); whether a harness opens a skill is decisive on a skill task (18) and differs strongly between harnesses; Hermes and OpenCode are equivalent overall on this suite but differ on specific tasks for explainable reasons; the nudge changes behaviour at a measurable cost.
-- Not supported: anything about other models, about skills in general (two tasks, one skill each), or about which harness is "better".
-- 11 of 20 tasks score 1.00 on every config and 2 more (17, 20) are 0.00 on every config, so the suite discriminates on only ~7 tasks; a harder, broader task set and a second model are the obvious next steps.
+## Methodological notes
+
+- **Task 19 reworded after observing failure.** The original prompt — "use the *standard* port and indentation" — led the model to write port 80. The current prompt — "our project's port and indentation conventions" — reveals no fact. This is a form of tuning on the evaluation and affects task 19 alone. The 0 → 0.80 result is conditional on that cue. Task 20 deliberately carries no analogous cue and remains 0 for every configuration.
+- **Platform bugs found by investigating surprising numbers (earlier runs discarded).** Leaked Hermes daemons exhausted worker memory and corrupted an early run (fabricated "OpenCode 0.36 vs Hermes 0.83"). `pytest.tmp_path` crashed under per-trial users and scored task 06 as 0.00 for Hermes. An independent review then found a grader-hijack via planted `conftest.py`, an unauthenticated `/trial`, an unauthenticated gateway, and failure misclassification. All fixed with regression tests. Approximately $16 of discarded compute is itemised in `cost.md`.
+- **Integrity audit** of the first full run: 0 of 1,124 agent tool calls touched hidden tests, solutions, the API key, or other trials. The sandbox was subsequently tightened to make these structurally impossible.
+
+---
+
+## Conclusions
+
+**Supported by this experiment:**
+- Memory meaningfully improves Hermes when the task requires the remembered fact (task 19, replicated).
+- Whether a harness discovers the task's skill is decisive on the skill task where the model engages (task 18); the two harnesses differ sharply here on the same model and skill files.
+- Hermes and OpenCode are statistically indistinguishable in aggregate on this suite, with explainable opposing per-task behaviours.
+- The nudge measurably changes agent behaviour at a measurable cost.
+
+**Not supported:**
+- Any claim about other models.
+- Any claim about skills in general — two skill tasks, one skill each.
+- Any ranking of Hermes vs OpenCode "overall".
+
+**Headroom.** 11 of 20 tasks score 1.00 on every configuration; two more (17, 20) score 0.00 on every configuration. The suite discriminates on roughly 7 tasks. A broader and harder task set, and a second model, are the clear next steps.
