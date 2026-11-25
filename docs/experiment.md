@@ -6,7 +6,7 @@ Two paired comparisons on a 20-task suite, Azure `gpt-4.1-mini` as the single mo
 - Nudge control (`e_e3a652f2`): 70 trials over two configurations on seven tasks.
 - 370 trials total. 0 infrastructure errors, 0 grader errors, 0 timeouts. Spend: $5.95 ($4.36 + $1.59).
 
-Both runs were executed on the final reviewed code. Exports: `GET /api/experiments/<id>/export.{json,csv}`.
+Both runs were executed on the final reviewed code. Raw exports (every trial, every event) are committed at [`docs/results/`](results/); endpoints: `GET /api/experiments/<id>/export.{json,csv}`.
 
 ---
 

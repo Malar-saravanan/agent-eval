@@ -70,7 +70,7 @@ Vue UI ─► NestJS API ─► Python worker
 
 ---
 
-## Results (see `docs/experiment.md`; screenshots in `docs/screenshots/`)
+## Results (see `docs/experiment.md`; raw exports in `docs/results/`; screenshots in `docs/screenshots/`)
 
 Main experiment: 20 tasks × 3 configs × N=5 = 290 scored trials, 0 infra errors, $4.36.
 
