@@ -1,6 +1,6 @@
-# Design
+# How it is put together
 
-## Architecture
+## Layout
 
 ```
 Vue UI ──► NestJS API (SQLite) ──HTTP──► Python worker
@@ -10,9 +10,9 @@ Vue UI ──► NestJS API (SQLite) ──HTTP──► Python worker
                                           └─ graders                  unit_tests | exact_match | fs_state | llm_judge
 ```
 
-### Boundaries
+### API vs worker
 
-The API owns state (configs, experiments, trials, queue, statistics, export). The worker is stateless: it accepts `{trial_id, task_id, config}` and returns a complete result. The contract between them is a single JSON schema.
+The API holds configs, experiments, trials, the queue, stats, and export. The worker keeps nothing: it takes `{trial_id, task_id, config}` and sends back one JSON result.
 
 ### The metering gateway
 
@@ -25,17 +25,17 @@ Both harnesses speak the OpenAI chat protocol. The worker exposes one endpoint t
 - enforces step and token budgets centrally — harness-level flags cannot drift between adapters;
 - records tokens, latency, resolved model snapshot, and cost identically for every call.
 
-The result is that cost and usage figures are comparable across harnesses and traceable per trial regardless of what each harness itself reports.
+Cost and tokens then mean the same thing for Hermes and OpenCode, even if the CLI reports something else.
 
 ---
 
-## Adapter model
+## Harnesses and models
 
-**Harness.** `Harness.run(ctx) → Result(events, final_text, timed_out, exit_code, complete, stderr)`; `capabilities ⊆ {skills, memory}`. Adapters translate native output — Hermes `stream-json`, OpenCode `--format json` — into a common event stream: `assistant | tool_call(kind=tool|skill|memory) | tool_result | error`. Tasks that require a capability the harness lacks resolve to `not_applicable` and are excluded from statistics.
+**Harness.** Implement `run(ctx)` and return `Result` (events, final text, timeout, exit code, complete, stderr). Declare `skills` and/or `memory` if the CLI supports them. Map Hermes `stream-json` / OpenCode `--format json` onto `assistant`, `tool_call`, `tool_result`, `error`. If the task needs a capability the harness does not have, the trial is `not_applicable` and stats skip it.
 
-**Model.** An entry in `config/models.yaml` (deployment env var, input/output price per 1M tokens). No code change.
+**Model.** One row in `config/models.yaml` (deployment env var, $/1M in and out). No code change.
 
-Both adapter interfaces are exercised by a regression test that registers a dummy third harness and runs it through the full trial lifecycle without touching core code.
+A test registers a dummy third harness and runs a full trial so this path does not rot.
 
 ---
 
@@ -45,9 +45,9 @@ Both adapter interfaces are exercised by a regression test that registers a dumm
 |--------------|---|
 | `configs`    | `id=name@vN`, content hash, harness, model, settings `{skills, memory, temperature, max_turns, token_budget, nudge}`. Immutable; any settings change produces a new version. |
 | `experiments`| name, trials_per_task, config_ids, task_ids |
-| `trials`     | experiment, config, task, trial_idx, status, score, reasoning, duration, cost, usage, trace events, final_text, files, provenance meta |
+| `trials`     | experiment, config, task, trial_idx, status, score, reasoning, duration, cost, usage, events, final_text, files, meta |
 
-A unique index on `(experiment_id, config_id, task_id, trial_idx)` prevents duplicate trials. Every write to a `trials` row goes through a whitelisted status set; a malformed worker reply is converted to `infra_error` rather than left in `running`.
+A unique index on `(experiment_id, config_id, task_id, trial_idx)` stops duplicate cells. Status has to be one of the seven known values; a bad worker reply becomes `infra_error` instead of sitting on `running`.
 
 **Trial status:** `passed | failed | timeout | infra_error | grader_error | not_applicable`. Statistics use `passed`, `failed`, and `timeout` (the last scored zero). `infra_error` is retried up to three times with exponential backoff, then excluded. `grader_error` is excluded. Neither is ever silently scored zero.
 
@@ -87,7 +87,7 @@ The grader does not trust the workdir.
 - Graders run on a thread pool; one slow grader does not stall the gateway.
 - The LLM judge delimits the agent's output as untrusted and rejects verdicts whose shape (criterion ids, boolean types) does not match the rubric.
 
-An integrity audit of the first full 300-trial run found 0 of 1,124 agent tool calls touching hidden tests, solutions, the API key, or other trials. An independent review subsequently identified the holes above (reachable `/trial`, unauthenticated gateway, grader hijack, blocking reads); each is now closed and pinned by a regression test. Residual risk is enumerated in `limits.md`.
+In the first 300-trial run, 1,124 tool calls never touched hidden tests, solutions, the API key, or another trial's files. A later pass still found `/trial` and the gateway reachable without a token, grader hijack via `conftest.py`, and blocking FIFO reads. Those are closed and have tests. What is still open is in `limits.md`.
 
 ---
 
@@ -113,9 +113,9 @@ Configs are content-hashed and immutable (`name@vN`). Every trial additionally p
 
 The statistical bootstrap is seeded. LLM sampling is not reproducible — hence N repeated trials — but the inputs of every trial and the analysis of its outputs are.
 
-### Crash safety and honest classification
+### Restarts and status
 
-Trials live in SQLite; on API restart, queued and running rows are re-queued. A platform failure is never recorded as an agent failure:
+Trials are in SQLite. If the API process dies, queued and running rows go back on the queue. Worker/Azure/grader failures are not scored as the agent failing:
 
 - a harness that produced no output, was killed, exited without its completion marker, or lost its connection → `infra_error`
 - a would-be `failed` or `timeout` trial accompanied by any gateway error (429, 5xx, hang, dropped stream) → `infra_error`

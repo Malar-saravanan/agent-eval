@@ -1,8 +1,8 @@
 # Agent Evals Platform
 
-A platform for comparing agent configurations — any **harness** paired with any **model** — against a shared task set, with paired statistics, full trajectories, and honest handling of infrastructure failure.
+Compare agent setups (harness × model × settings) on the same tasks. You get scores with CIs, traces, cost, and retries when Azure or the worker dies — those trials are not scored as the agent failing.
 
-Shipped harnesses: **Hermes Agent**, **OpenCode**. Shipped models: Azure OpenAI deployments (`gpt-4.1-mini`). Additional harnesses and models are adapters, not core changes.
+Harnesses: **Hermes Agent**, **OpenCode**. Model: Azure OpenAI `gpt-4.1-mini`. Another harness or model is a small adapter, not a rewrite.
 
 ---
 
@@ -19,8 +19,8 @@ Requirements: Docker with ≥ 6 GB of memory and an Azure OpenAI chat deployment
 ### Workflow
 
 1. **Configs** — define a configuration as `harness × model × settings` (skills, memory, temperature, step budget, token budget, nudge). Configs are content-hashed and immutable; editing an existing name produces a new version.
-2. **Experiments** — pick configs, tasks, and trials-per-task; launch. The queue runs trials concurrently, retries infrastructure failures, and never attributes platform failure to the agent.
-3. **Analyse** — the experiment page reports mean scores with bootstrap CIs, paired comparisons with per-task deltas and a forest plot, cost/latency/tokens alongside quality, and failure classification. Per-trial trajectories are inspectable. Exports in JSON and CSV.
+2. **Experiments** — pick configs, tasks, and trials-per-task, then start. The queue runs a few at a time and retries worker/Azure failures.
+3. **Results** — mean scores and CIs, pairwise compare with a forest plot, cost/latency/tokens, failure buckets, and the trace for each trial. Export JSON or CSV.
 
 ### Reproducing the reported experiment
 
@@ -42,7 +42,7 @@ Defaults: temperature 0.2, 30 steps, 300k tokens per trial. A **step** is a mode
 ## Layout
 
 ```
-api/      NestJS control plane — configs, experiments, trial queue, stats, export (SQLite via node:sqlite). Serves the built UI.
+api/      NestJS — configs, experiments, trial queue, stats, export (SQLite). Serves the built UI.
 web/      Vue 3 + TypeScript UI (Vite).
 worker/   Python / FastAPI — metering model gateway, harness adapters, graders, trial runner.
 tasks/    Task definitions (task.yaml + fixture/ + hidden tests/ + skills/).
@@ -91,8 +91,8 @@ Tests are offline — no Azure calls, no harness binaries. Inside the running st
 
 ---
 
-## Design in one paragraph
+## How a run works
 
-A NestJS control plane persists configs, experiments, and trials in SQLite and schedules work. A Python worker runs each trial as its own unprivileged user inside a fresh directory; Hermes and OpenCode reach Azure only through a metering gateway that enforces step and token budgets and records usage uniformly. Graders score the result against hidden tests, file-system state, exact match, or an LLM rubric. The API computes paired bootstrap statistics, classifies failures by cause, and exposes everything over REST. Infrastructure failures are retried and excluded from scoring; they are never attributed to the agent.
+The API stores configs and trials in SQLite and calls the Python worker. Each trial is a throwaway Linux user in a fresh directory. Hermes and OpenCode only talk to Azure through a gateway that counts tokens and enforces step/token limits. After the run, a grader (hidden tests, files, exact match, or an LLM rubric) scores it. Compare uses a paired bootstrap. If the platform failed, that trial is retried and left out of the score.
 
-See [`docs/design.md`](docs/design.md), [`docs/experiment.md`](docs/experiment.md), [`docs/limits.md`](docs/limits.md).
+More detail: [`docs/design.md`](docs/design.md), [`docs/experiment.md`](docs/experiment.md), [`docs/limits.md`](docs/limits.md).

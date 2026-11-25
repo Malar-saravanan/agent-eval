@@ -167,7 +167,7 @@ SQLite. Three tables. Unique on `(experiment_id, config_id, task_id, trial_idx)`
 
 ---
 
-## Choices that matter
+## Why it is this way
 
 | Choice | Why |
 |---|---|
@@ -191,11 +191,11 @@ SQLite. Three tables. Unique on `(experiment_id, config_id, task_id, trial_idx)`
 
 The 20 tasks mix code, files, exact answers, a few judge rubrics, and four that actually need skills or memory. That is enough to compare harness settings on one model; it is not a general agent leaderboard.
 
-## In / out
+## What this repo does / does not
 
-**In.** Hermes + OpenCode; Azure `gpt-4.1-mini`; 20 tasks, four grader types; N repeats; isolation, budgets, retries, heartbeats; paired stats with “within noise” / “not enough data”; traces; JSON/CSV; failure rules; 206 offline tests.
+**Does.** Hermes + OpenCode; Azure `gpt-4.1-mini`; 20 tasks, four grader types; N repeats; uid sandbox, budgets, retries; paired stats (“within noise” / “not enough data”); traces; JSON/CSV; failure rules; 206 offline tests.
 
-**Out.** Second provider / open-weight model (YAML hook is there); per-trial containers; distributed queue; multi-user auth; prompt-cache discount; splitting judge cost onto trials.
+**Does not.** A second provider or open-weight model (add it in YAML); a container per trial; a distributed queue; login; prompt-cache discounts; putting judge tokens on the trial that was graded.
 
 ## Extension
 
@@ -246,4 +246,4 @@ docker compose up --build    # UI + API on :3000
 ```
 
 - Tests: `cd api && npm test` (55); `cd worker && pytest tests -q` (151); `python tasks/validate.py` (20/20).
-- Order to read: [`README.md`](../README.md) → this file → [`docs/design.md`](design.md) → [`docs/experiment.md`](experiment.md) → [`docs/limits.md`](limits.md) → [`docs/cost.md`](cost.md).
+- Other notes: [`docs/design.md`](design.md), [`docs/experiment.md`](experiment.md), [`docs/limits.md`](limits.md), [`docs/cost.md`](cost.md).
